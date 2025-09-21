@@ -7,11 +7,8 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class UserControllerTest {
 
@@ -24,8 +21,7 @@ class UserControllerTest {
                 .email("")
                 .login("validLogin")
                 .name("Name")
-                .birthday(Date.from(LocalDate.of(2000, 1, 1)
-                        .atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createUser(user));
@@ -41,8 +37,7 @@ class UserControllerTest {
                 .email("invalidEmail")
                 .login("validLogin")
                 .name("Name")
-                .birthday(Date.from(LocalDate.of(2000, 1, 1)
-                        .atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createUser(user));
@@ -58,8 +53,7 @@ class UserControllerTest {
                 .email("user@example.com")
                 .login("")
                 .name("Name")
-                .birthday(Date.from(LocalDate.of(2000, 1, 1)
-                        .atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createUser(user));
@@ -75,8 +69,7 @@ class UserControllerTest {
                 .email("user@example.com")
                 .login("invalid login")
                 .name("Name")
-                .birthday(Date.from(LocalDate.of(2000, 1, 1)
-                        .atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createUser(user));
@@ -92,8 +85,7 @@ class UserControllerTest {
                 .email("user@example.com")
                 .login("login123")
                 .name("")
-                .birthday(Date.from(LocalDate.of(2000, 1, 1)
-                        .atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
         User created = controller.createUser(user);
@@ -109,8 +101,7 @@ class UserControllerTest {
                 .email("user@example.com")
                 .login("validLogin")
                 .name("Name")
-                .birthday(Date.from(LocalDate.now().plusDays(1)
-                        .atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .birthday(LocalDate.now().plusDays(1))
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createUser(user));

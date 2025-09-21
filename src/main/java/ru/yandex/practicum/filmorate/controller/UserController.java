@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +16,6 @@ import java.util.Map;
 public class UserController {
 
     private final Map<Long, User> users = new HashMap<>();
-
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @GetMapping
@@ -30,32 +28,33 @@ public class UserController {
         validate(user);
 
         if (user.getId() != null && users.containsKey(user.getId())) {
-            log.warn("Фильм не прошел валидацию по id (такой уже есть)");
-            throw new ValidationException("Фильма с id " + user.getId() + " нет");
+            log.warn("Пользователь не прошел валидацию по id (такой уже есть)");
+            throw new ValidationException("Пользователь с id " + user.getId() + " уже существует");
         }
 
         if (user.getId() == null) {
             user.setId(getNextId());
         }
 
-        users.put(getNextId(), user);
+        users.put(user.getId(), user);
 
-        log.info("Создан фильм {}", user);
+        log.info("Создан пользователь {}", user);
         return user;
     }
 
     @PutMapping
-    public User updateFilm(@RequestBody User user) {
+    public User updateUser(@RequestBody User user) {
         validate(user);
 
         if (user.getId() != null && !users.containsKey(user.getId())) {
-            log.warn("Фильм не прошел валидацию по id (такого нет)");
-            throw new ValidationException("Фильма с id " + user.getId() + " нет");
+            log.warn("Пользователь не прошел валидацию по id (такого нет)");
+            throw new ValidationException("Пользователя с id " + user.getId() + " нет");
         }
 
         User updatedUser = user.toBuilder().build();
         users.put(user.getId(), updatedUser);
-        log.info("Обновлен пользователь с id={}, {}",user.getId(), user);
+
+        log.info("Обновлен пользователь с id={}, {}", user.getId(), user);
         return updatedUser;
     }
 
@@ -94,12 +93,7 @@ public class UserController {
             user.setName(user.getLogin());
         }
 
-        LocalDate birthday = user.getBirthday()
-                .toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-
-        if (birthday.isAfter(LocalDate.now())) {
+        if (user.getBirthday().isAfter(LocalDate.now())) {
             log.warn("Пользователь не прошел валидацию: дата рождения в будущем {}", user.getBirthday());
             throw new ValidationException("Дата рождения не может быть в будущем");
         }

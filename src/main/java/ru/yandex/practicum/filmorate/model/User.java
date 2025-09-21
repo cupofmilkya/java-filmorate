@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -16,5 +16,5 @@ public class User {
     private String email;
     private String login;
     private String name;
-    private Date birthday;
+    private LocalDate birthday;
 }
