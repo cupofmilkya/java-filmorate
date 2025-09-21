@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class FilmController {
             film.setId(getNextId());
         }
 
-        films.put(getNextId(), film);
+        films.put(film.getId(), film);
 
         log.info("Создан фильм {}", film);
         return film;
@@ -55,7 +54,7 @@ public class FilmController {
         Film updatedFilm = film.toBuilder().build();
         films.put(film.getId(), updatedFilm);
 
-        log.info("Обновлен фильм с id={}, {}",film.getId(), film);
+        log.info("Обновлен фильм с id={}, {}", film.getId(), film);
         return updatedFilm;
     }
 
@@ -80,11 +79,7 @@ public class FilmController {
         }
 
         LocalDate barrier = LocalDate.of(1895, 12, 28);
-
-        LocalDate releaseDate = film.getReleaseDate()
-                .toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
+        LocalDate releaseDate = film.getReleaseDate();
 
         if (releaseDate.isBefore(barrier)) {
             log.warn("Фильм не прошел валидацию по дате");

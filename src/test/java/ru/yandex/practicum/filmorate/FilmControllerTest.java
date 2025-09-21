@@ -7,8 +7,6 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,7 +19,7 @@ class FilmControllerTest {
         Film film = Film.builder()
                 .name("Valid Film")
                 .description("Описание фильма")
-                .releaseDate(new Date())
+                .releaseDate(LocalDate.of(2000, 5, 20))
                 .duration(120)
                 .build();
 
@@ -37,7 +35,7 @@ class FilmControllerTest {
         Film film = Film.builder()
                 .name(" ")
                 .description("Описание")
-                .releaseDate(new Date())
+                .releaseDate(LocalDate.of(2000, 5, 20))
                 .duration(100)
                 .build();
 
@@ -53,7 +51,7 @@ class FilmControllerTest {
         Film film = Film.builder()
                 .name("Film")
                 .description(longDesc)
-                .releaseDate(new Date())
+                .releaseDate(LocalDate.of(2000, 5, 20))
                 .duration(100)
                 .build();
 
@@ -68,11 +66,7 @@ class FilmControllerTest {
         Film film = Film.builder()
                 .name("Film")
                 .description("Описание")
-                .releaseDate(Date.from(
-                        LocalDate.of(1800, 1, 1)
-                                .atStartOfDay(ZoneId.systemDefault())
-                                .toInstant()
-                ))
+                .releaseDate(LocalDate.of(1800, 1, 1))
                 .duration(100)
                 .build();
 
@@ -87,7 +81,7 @@ class FilmControllerTest {
         Film film = Film.builder()
                 .name("Film")
                 .description("Описание")
-                .releaseDate(new Date())
+                .releaseDate(LocalDate.of(2000, 5, 20))
                 .duration(-50)
                 .build();
 

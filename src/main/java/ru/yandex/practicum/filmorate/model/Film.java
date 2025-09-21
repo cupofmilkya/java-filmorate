@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 /**
  * Film.
@@ -18,6 +18,6 @@ public class Film {
     private Long id;
     private String name;
     private String description;
-    private Date releaseDate;
+    private LocalDate releaseDate;
     private int duration;
 }
