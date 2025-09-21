@@ -6,7 +6,6 @@ import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
@@ -23,7 +22,7 @@ class FilmControllerTest {
                 .name("Valid Film")
                 .description("Описание фильма")
                 .releaseDate(new Date())
-                .duration(Duration.ofMinutes(120))
+                .duration(120)
                 .build();
 
         Film created = controller.createFilm(film);
@@ -39,7 +38,7 @@ class FilmControllerTest {
                 .name(" ")
                 .description("Описание")
                 .releaseDate(new Date())
-                .duration(Duration.ofMinutes(100))
+                .duration(100)
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createFilm(film));
@@ -55,7 +54,7 @@ class FilmControllerTest {
                 .name("Film")
                 .description(longDesc)
                 .releaseDate(new Date())
-                .duration(Duration.ofMinutes(100))
+                .duration(100)
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createFilm(film));
@@ -74,7 +73,7 @@ class FilmControllerTest {
                                 .atStartOfDay(ZoneId.systemDefault())
                                 .toInstant()
                 ))
-                .duration(Duration.ofMinutes(100))
+                .duration(100)
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createFilm(film));
@@ -89,7 +88,7 @@ class FilmControllerTest {
                 .name("Film")
                 .description("Описание")
                 .releaseDate(new Date())
-                .duration(Duration.ofMinutes(-50))
+                .duration(-50)
                 .build();
 
         ValidationException ex = assertThrows(ValidationException.class, () -> controller.createFilm(film));

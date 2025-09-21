@@ -91,7 +91,7 @@ public class FilmController {
             throw new ValidationException("Дата релиза не может быть раньше " + barrier);
         }
 
-        if (film.getDuration().toSeconds() <= 0) {
+        if (film.getDuration() <= 0) {
             log.warn("Фильм не прошел валидацию по продолжительности");
             throw new ValidationException("Продолжительность фильма должна быть положительным числом");
         }
