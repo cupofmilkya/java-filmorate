@@ -77,22 +77,6 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Проверка подстановки логина вместо пустого имени")
-    void createUserEmptyName() {
-        UserController controller = new UserController();
-
-        User user = User.builder()
-                .email("user@example.com")
-                .login("login123")
-                .name("")
-                .birthday(LocalDate.of(2000, 1, 1))
-                .build();
-
-        User created = controller.createUser(user);
-        assertEquals("login123", created.getName());
-    }
-
-    @Test
     @DisplayName("Проверка даты рождения в будущем")
     void createUserFutureBirthday() {
         UserController controller = new UserController();

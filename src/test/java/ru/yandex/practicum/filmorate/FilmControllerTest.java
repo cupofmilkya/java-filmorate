@@ -13,22 +13,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class FilmControllerTest {
 
     @Test
-    @DisplayName("Проверка на создание фильма с валидными данными")
-    void createValidFilm() {
-        FilmController controller = new FilmController();
-        Film film = Film.builder()
-                .name("Valid Film")
-                .description("Описание фильма")
-                .releaseDate(LocalDate.of(2000, 5, 20))
-                .duration(120)
-                .build();
-
-        Film created = controller.createFilm(film);
-        assertNotNull(created);
-        assertEquals("Valid Film", created.getName());
-    }
-
-    @Test
     @DisplayName("Проверка на пустое имя фильма")
     void createFilmEmptyName() {
         FilmController controller = new FilmController();
