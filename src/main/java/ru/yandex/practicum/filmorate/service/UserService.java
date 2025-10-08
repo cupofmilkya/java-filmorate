@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,8 @@ public class UserService {
     }
 
     public User addUser(User user) {
+        validate(user);
+
         if (user.getId() != null && userStorage.getUsers().containsKey(user.getId())) {
             log.warn("Пользователь не прошел валидацию по id (такой уже есть)");
             throw new ValidationException("Пользователь с id " + user.getId() + " уже существует");
@@ -36,6 +39,8 @@ public class UserService {
     }
 
     public User updateUser(User user) {
+        validate(user);
+
         if (user.getId() != null && !userStorage.getUsers().containsKey(user.getId())) {
             log.warn("Пользователь не прошел валидацию по id (такого нет)");
             throw new NotFoundException("Пользователя с id " + user.getId() + " нет");
@@ -128,5 +133,37 @@ public class UserService {
         return commonFriendIds.stream()
                 .map(userStorage::getUser)
                 .collect(Collectors.toSet());
+    }
+
+    private void validate(User user) {
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            log.warn("Пользователь не прошел валидацию: пустая электронная почта");
+            throw new ValidationException("Электронная почта не может быть пустой");
+        }
+
+        if (!user.getEmail().contains("@")) {
+            log.warn("Пользователь не прошел валидацию: некорректная электронная почта {}", user.getEmail());
+            throw new ValidationException("Электронная почта должна содержать символ '@'");
+        }
+
+        if (user.getLogin() == null || user.getLogin().isBlank()) {
+            log.warn("Пользователь не прошел валидацию: пустой логин");
+            throw new ValidationException("Логин не может быть пустым");
+        }
+
+        if (user.getLogin().contains(" ")) {
+            log.warn("Пользователь не прошел валидацию: логин содержит пробелы {}", user.getLogin());
+            throw new ValidationException("Логин не может содержать пробелы");
+        }
+
+        if (user.getName() == null || user.getName().isBlank()) {
+            log.info("Имя пользователя пустое, подставляем логин {}", user.getLogin());
+            user.setName(user.getLogin());
+        }
+
+        if (user.getBirthday().isAfter(LocalDate.now())) {
+            log.warn("Пользователь не прошел валидацию: дата рождения в будущем {}", user.getBirthday());
+            throw new ValidationException("Дата рождения не может быть в будущем");
+        }
     }
 }

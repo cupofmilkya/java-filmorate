@@ -13,31 +13,34 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ErrorHandler {
+    private final String error = "error";
+    private final String message = "message";
+
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> notFoundHandler(NotFoundException e) {
-        return Map.of("error", "Объект не найден.",
-                "message", e.getMessage());
+        return Map.of(error, "Объект не найден.",
+                message, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> validationExceptionHandler(ValidationException e) {
-        return Map.of("error", "Ошибка валидации.",
-                "message", e.getMessage());
+        return Map.of(error, "Ошибка валидации.",
+                message, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> friendsAddingExceptionHandler(FriendsAddingException e) {
-        return Map.of("error", "Ошибка добавления друга",
-                "message", e.getMessage());
+        return Map.of(error, "Ошибка добавления друга",
+                message, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> likesSendingExceptionHandler(LikesSendingException e) {
-        return Map.of("error", "Ошибка добавления лайка",
-                "message", e.getMessage());
+        return Map.of(error, "Ошибка добавления лайка",
+                message, e.getMessage());
     }
 }

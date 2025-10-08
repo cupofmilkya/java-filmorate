@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -30,6 +31,7 @@ public class FilmService {
     }
 
     public Film addFilm(Film film) {
+        validate(film);
         if (film.getId() != null && filmStorage.getFilms().containsKey(film.getId())) {
             log.warn("Фильм не прошёл валидацию по id (такой уже есть)");
             throw new ValidationException("Фильм с id " + film.getId() + " уже существует");
@@ -42,6 +44,8 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
+        validate(film);
+
         if (film.getId() != null && !filmStorage.getFilms().containsKey(film.getId())) {
             log.warn("Фильм не прошёл валидацию по id (такого нет)");
             throw new NotFoundException("Фильма с id " + film.getId() + " нет");
@@ -105,5 +109,30 @@ public class FilmService {
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
                 .collect(Collectors.toList());
+    }
+
+    private void validate(Film film) {
+        if (film.getName() == null || film.getName().isBlank()) {
+            log.warn("Фильм не прошёл валидацию по имени");
+            throw new ValidationException("Пустое значение имени");
+        }
+
+        if (film.getDescription() != null && film.getDescription().length() > 200) {
+            log.warn("Фильм не прошёл валидацию по длине описания");
+            throw new ValidationException("Максимальная длина описания — 200 символов");
+        }
+
+        LocalDate barrier = LocalDate.of(1895, 12, 28);
+        LocalDate releaseDate = film.getReleaseDate();
+
+        if (releaseDate.isBefore(barrier)) {
+            log.warn("Фильм не прошёл валидацию по дате релиза");
+            throw new ValidationException("Дата релиза не может быть раньше " + barrier);
+        }
+
+        if (film.getDuration() <= 0) {
+            log.warn("Фильм не прошёл валидацию по продолжительности");
+            throw new ValidationException("Продолжительность фильма должна быть положительным числом");
+        }
     }
 }
