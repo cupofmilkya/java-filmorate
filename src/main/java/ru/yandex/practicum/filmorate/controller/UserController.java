@@ -1,69 +1,72 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
-    private final Map<Long, User> users = new HashMap<>();
+    @Autowired
+    UserService userService;
 
     @GetMapping
     public Collection<User> getUsers() {
-        return users.values();
+        return userService.getUsers();
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) {
         validate(user);
 
-        if (user.getId() != null && users.containsKey(user.getId())) {
-            log.warn("Пользователь не прошел валидацию по id (такой уже есть)");
-            throw new ValidationException("Пользователь с id " + user.getId() + " уже существует");
-        }
-
-        if (user.getId() == null) {
-            user.setId(getNextId());
-        }
-
-        users.put(user.getId(), user);
-
-        log.info("Создан пользователь {}", user);
-        return user;
+        return userService.addUser(user);
     }
 
     @PutMapping
     public User updateUser(@RequestBody User user) {
         validate(user);
 
-        if (user.getId() != null && !users.containsKey(user.getId())) {
-            log.warn("Пользователь не прошел валидацию по id (такого нет)");
-            throw new ValidationException("Пользователя с id " + user.getId() + " нет");
-        }
-
-        User updatedUser = user.toBuilder().build();
-        users.put(user.getId(), updatedUser);
-
-        log.info("Обновлен пользователь с id={}, {}", user.getId(), user);
-        return updatedUser;
+        return userService.updateUser(user);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @PutMapping("/{id}/friends/{friendId}")
+    public User addFriend(
+            @PathVariable long id,
+            @PathVariable long friendId
+    ) {
+        return userService.addFriend(id, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public User deleteFriend(
+            @PathVariable long id,
+            @PathVariable long friendId
+    ) {
+        return userService.deleteFriend(id, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public Set<User> getFriends(
+            @PathVariable long id
+    ) {
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Set<User> getCommonFriends(
+            @PathVariable long id,
+            @PathVariable long otherId
+    ) {
+        return userService.getCommonFriends(id, otherId);
     }
 
     private void validate(User user) {
