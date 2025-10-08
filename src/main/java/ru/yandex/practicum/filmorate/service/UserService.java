@@ -78,16 +78,22 @@ public class UserService {
         User friend = userStorage.getUser(friendId);
 
         if (user == null) {
-            throw new NotFoundException("Пользователя с id " + id + " не найдено");
-        }
-        if (friend == null) {
-            throw new NotFoundException("Пользователя с id " + friendId + " не найдено");
+            throw new NotFoundException("Пользователя с айди " + id + " не найдено");
         }
 
+        if (friend == null) {
+            throw new NotFoundException("Пользователя с айди " + friendId + " не найдено");
+        }
+
+        if (!user.getFriends().contains(friendId) || !friend.getFriends().contains(id)) {
+            throw new FriendsAddingException("Пользователи с айди " + id + " и " + friendId +
+                    " не в друзьях друг у друга");
+        }
         user.deleteFriend(friendId);
         friend.deleteFriend(id);
 
-        log.info("Пользователь {} удалил из друзей пользователя {}", id, friendId);
+        log.info("Пользователь {} удалил из друзей пользователя {} ", id, friendId);
+
         return user;
     }
 
