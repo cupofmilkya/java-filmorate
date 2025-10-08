@@ -24,8 +24,8 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUser(long Id) {
-        return users.get(Id);
+    public User getUser(long id) {
+        return users.get(id);
     }
 
     @Override
@@ -34,8 +34,8 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void updateUser(long Id, User user) {
-        User userToUpdate = users.get(Id);
+    public void updateUser(long id, User user) {
+        User userToUpdate = users.get(id);
         if (userToUpdate != null) {
             userToUpdate.setName(user.getName());
             userToUpdate.setBirthday(user.getBirthday());

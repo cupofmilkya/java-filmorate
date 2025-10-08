@@ -7,9 +7,9 @@ import java.util.Map;
 public interface FilmStorage {
     void addFilm(Film film);
 
-    Film getFilm(long Id);
+    Film getFilm(long id);
 
     Map<Long, Film> getFilms();
 
-    void updateFilm(long Id, Film film);
+    void updateFilm(long id, Film film);
 }

@@ -7,9 +7,9 @@ import java.util.Map;
 public interface UserStorage {
     void addUser(User user);
 
-    User getUser(long Id);
+    User getUser(long id);
 
     Map<Long, User> getUsers();
 
-    void updateUser(long Id, User user);
+    void updateUser(long id, User user);
 }
