@@ -1,2 +1,18 @@
 # java-filmorate
-Template repository for Filmorate project.
+### Структура базы данных
+Данные в базе находятся в **третьей нормальной форме (3НФ)**
+- Таблицы:
+    - `Users` — пользователи
+    - `Films` — фильмы
+    - `Likes` — лайки пользователей
+    - `UsersFriendships` — дружба между пользователями
+    - `Genre` — жанры фильмов
+    - `MpaRating` — возрастные рейтинги фильмов
+    - `GenreFilm` — промежуточная таблица между `Films` и `Genre`
+---
+
+### ER-диаграмма
+
+Полная схема связей в **Miro**:  
+[ER-диаграмма Java Filmorate](https://miro.com/app/board/uXjVJ0uks6U=/?share_link_id=691903765479)
+---

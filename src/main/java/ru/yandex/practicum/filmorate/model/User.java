@@ -3,8 +3,8 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -17,17 +17,17 @@ public class User {
     private String login;
     private String name;
     private LocalDate birthday;
-    private Set<Long> friends;
+    private Map<Long, FriendshipStatus> friends;
 
     public User() {
-        friends = new HashSet<>();
+        friends = new HashMap<>();
     }
 
-    public boolean addFriend(Long id) {
-        return friends.add(id);
+    public void addFriend(Long id) {
+        friends.put(id, FriendshipStatus.CONFIRMED);
     }
 
-    public boolean deleteFriend(Long id) {
-        return friends.remove(id);
+    public void deleteFriend(Long id) {
+        friends.remove(id);
     }
 }
