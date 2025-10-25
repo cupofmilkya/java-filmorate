@@ -21,16 +21,27 @@ public class Film {
     private LocalDate releaseDate;
     private int duration;
     private Set<Long> likes;
+    private Set<Genre> genres;
+    private MpaRating mpaRating;
 
     public Film() {
         likes = new HashSet<>();
+        genres = new HashSet<>();
     }
 
-    public boolean addLike(Long id) {
-        return likes.add(id);
+    public void addLike(Long id) {
+        likes.add(id);
     }
 
-    public boolean removeLike(Long id) {
-        return likes.remove(id);
+    public void removeLike(Long id) {
+        likes.remove(id);
+    }
+
+    public boolean addGenre(Genre genre) {
+        return genres.add(genre);
+    }
+
+    public boolean removeGenre(Genre genre) {
+        return genres.remove(genre);
     }
 }

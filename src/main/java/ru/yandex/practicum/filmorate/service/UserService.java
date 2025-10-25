@@ -66,7 +66,7 @@ public class UserService {
             throw new NotFoundException("Пользователя с айди " + friendId + " не найдено");
         }
 
-        if (user.getFriends().contains(friendId) || friend.getFriends().contains(id)) {
+        if (user.getFriends().containsKey(friendId) || friend.getFriends().containsKey(id)) {
             throw new FriendsAddingException("Пользователи с айди " + id + " и " + friendId +
                     " уже в друзьях друг у друга");
         }
@@ -90,7 +90,7 @@ public class UserService {
         }
 
         // Если не друзья — просто ничего не делаем
-        if (!user.getFriends().contains(friendId) || !friend.getFriends().contains(id)) {
+        if (!user.getFriends().containsKey(friendId) || !friend.getFriends().containsKey(id)) {
             log.info("Попытка удалить несуществующую дружбу между {} и {}", id, friendId);
             return user; // ← просто вернуть 200 OK без исключений
         }
@@ -109,7 +109,7 @@ public class UserService {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
 
-        return user.getFriends().stream()
+        return user.getFriends().keySet().stream()
                 .map(userStorage::getUser)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -127,8 +127,8 @@ public class UserService {
             throw new NotFoundException("Пользователь с id " + otherId + " не найден");
         }
 
-        Set<Long> commonFriendIds = new HashSet<>(user.getFriends());
-        commonFriendIds.retainAll(otherUser.getFriends());
+        Set<Long> commonFriendIds = new HashSet<>(user.getFriends().keySet());
+        commonFriendIds.retainAll(otherUser.getFriends().keySet());
 
         return commonFriendIds.stream()
                 .map(userStorage::getUser)
