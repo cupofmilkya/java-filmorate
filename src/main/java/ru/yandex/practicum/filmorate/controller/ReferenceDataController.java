@@ -14,10 +14,11 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping
 public class ReferenceDataController {
+
     @GetMapping("/genres")
     public List<GenreDTO> getAllGenres() {
         return Arrays.stream(Genre.values())
-                .map(g -> new GenreDTO(g.ordinal() + 1, toDisplayName(g)))
+                .map(GenreDTO::fromEnum)
                 .collect(Collectors.toList());
     }
 
@@ -26,14 +27,13 @@ public class ReferenceDataController {
         if (id < 1 || id > Genre.values().length) {
             throw new NotFoundException("Жанр с id " + id + " не найден");
         }
-        Genre g = Genre.values()[id - 1];
-        return new GenreDTO(id, toDisplayName(g));
+        return GenreDTO.fromEnum(Genre.values()[id - 1]);
     }
 
     @GetMapping("/mpa")
     public List<MpaDTO> getAllMpa() {
         return Arrays.stream(MpaRating.values())
-                .map(r -> new MpaDTO(r.ordinal() + 1, toDisplayName(r)))
+                .map(MpaDTO::fromEnum)
                 .collect(Collectors.toList());
     }
 
@@ -42,28 +42,6 @@ public class ReferenceDataController {
         if (id < 1 || id > MpaRating.values().length) {
             throw new NotFoundException("MPA с id " + id + " не найден");
         }
-        MpaRating r = MpaRating.values()[id - 1];
-        return new MpaDTO(id, toDisplayName(r));
-    }
-
-    private String toDisplayName(Genre g) {
-        return switch (g) {
-            case COMEDY -> "Комедия";
-            case DRAMA -> "Драма";
-            case CARTOON -> "Мультфильм";
-            case THRILLER -> "Триллер";
-            case DOCUMENTARY -> "Документальный";
-            case ACTION -> "Боевик";
-        };
-    }
-
-    private String toDisplayName(MpaRating r) {
-        return switch (r) {
-            case G -> "G";
-            case PG -> "PG";
-            case PG13 -> "PG-13";
-            case R -> "R";
-            case NC17 -> "NC-17";
-        };
+        return MpaDTO.fromEnum(MpaRating.values()[id - 1]);
     }
 }

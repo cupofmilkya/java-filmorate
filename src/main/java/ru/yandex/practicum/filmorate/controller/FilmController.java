@@ -65,14 +65,11 @@ public class FilmController {
                 .description(film.getDescription())
                 .releaseDate(film.getReleaseDate())
                 .duration(film.getDuration())
-                .mpa(film.getMpaRating() != null
-                        ? new MpaDTO(film.getMpaRating().ordinal() + 1, film.getMpaRating().toString())
-                        : null)
-                .genres(film.getGenres() != null
-                        ? film.getGenres().stream()
-                        .map(g -> new GenreDTO(g.ordinal() + 1, g.name()))
-                        .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparingInt(GenreDTO::getId))))
-                        : new TreeSet<>())
+                .mpa(film.getMpaRating() != null ? MpaDTO.fromEnum(film.getMpaRating()) : null)
+                .genres(film.getGenres().stream()
+                        .map(GenreDTO::fromEnum)
+                        .sorted(Comparator.comparingInt(GenreDTO::getId)) // сортировка по id
+                        .collect(Collectors.toCollection(LinkedHashSet::new))) // сохраняем порядок
                 .build();
     }
 
@@ -85,9 +82,9 @@ public class FilmController {
         film.setDuration(dto.getDuration());
 
         if (dto.getMpa() != null) {
-            Long mpaId = (long) dto.getMpa().getId();
+            int mpaId = dto.getMpa().getId();
             if (mpaId > 0 && mpaId <= MpaRating.values().length) {
-                film.setMpaRating(MpaRating.values()[mpaId.intValue() - 1]);
+                film.setMpaRating(MpaRating.values()[mpaId - 1]);
             } else {
                 throw new NotFoundException("Не существует MPA с ID: " + mpaId);
             }
@@ -100,7 +97,7 @@ public class FilmController {
                     .map(g -> {
                         int index = g.getId() - 1;
                         if (index < 0 || index >= Genre.values().length) {
-                            throw new NotFoundException("Не существует жанра с ID : " + g.getId());
+                            throw new NotFoundException("Не существует жанра с ID: " + g.getId());
                         }
                         return Genre.values()[index];
                     })
@@ -109,6 +106,7 @@ public class FilmController {
         } else {
             film.setGenres(Set.of());
         }
+
         return film;
     }
 
