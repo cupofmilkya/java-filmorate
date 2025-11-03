@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -103,11 +104,23 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void deleteFriend(Long userId, Long friendId) {
-        String deleteSql = "DELETE FROM user_friendships WHERE user_id = ? AND friend_id = ?";
-        int deleted = jdbcTemplate.update(deleteSql, userId, friendId);
+        String deleteSql = "DELETE FROM user_friendships WHERE (user_id = ? AND friend_id = ?)" +
+                "OR (user_id = ? AND friend_id = ?)";
+        jdbcTemplate.update(deleteSql, userId, friendId, friendId, userId);
+    }
 
-        if (deleted == 0) {
-            throw new NotFoundException("Дружба между пользователями не найдена");
-        }
+    private void loadAllFriends(User user) {
+        user.getFriends().clear();
+        String sql = "SELECT user_id, friend_id, confirmed FROM user_friendships WHERE user_id = ? OR friend_id = ?";
+
+        jdbcTemplate.query(sql, rs -> {
+            Long userId = rs.getLong("user_id");
+            Long friendId = rs.getLong("friend_id");
+            boolean confirmed = rs.getBoolean("confirmed");
+
+            Long otherId = userId.equals(user.getId()) ? friendId : userId;
+
+            user.getFriends().put(otherId, confirmed ? FriendshipStatus.CONFIRMED : FriendshipStatus.UNCONFIRMED);
+        }, user.getId(), user.getId());
     }
 }
