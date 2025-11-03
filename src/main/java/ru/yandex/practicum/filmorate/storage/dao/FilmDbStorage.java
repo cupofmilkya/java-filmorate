@@ -7,11 +7,9 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -41,9 +39,8 @@ public class FilmDbStorage implements FilmStorage {
     public Film getFilm(long id) {
         String sql = "SELECT * FROM films WHERE film_id = ?";
         List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), id);
-        if (films.isEmpty()) {
-            return null;
-        }
+        if (films.isEmpty()) return null;
+
         Film film = films.getFirst();
         film.setLikes(getLikes(film.getId()));
         return film;
@@ -55,26 +52,28 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, new FilmMapper());
 
         films.forEach(f -> f.setLikes(getLikes(f.getId())));
-
         return films.stream().collect(Collectors.toMap(Film::getId, f -> f));
     }
 
     @Override
     public void updateFilm(long id, Film film) {
-        String sql = "UPDATE films SET name=?, description=?, release_date=?, duration=? WHERE film_id=?";
-        jdbcTemplate.update(sql,
+        String sql = "UPDATE films SET name=?, description=?, release_date=?, duration=?, mpa_id=? WHERE film_id=?";
+        int updated = jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
                 film.getReleaseDate(),
                 film.getDuration(),
-                id);
+                film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : null,
+                id
+        );
+        if (updated == 0) {
+            throw new NotFoundException("Фильм с id " + id + " не найден");
+        }
     }
 
     public void sendLike(Long userId, Long filmId) {
         String sql = "INSERT INTO likes (user_id, film_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql,
-                userId,
-                filmId);
+        jdbcTemplate.update(sql, userId, filmId);
     }
 
     public void removeLike(Long userId, Long filmId) {

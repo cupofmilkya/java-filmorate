@@ -33,9 +33,9 @@ public class UserController {
         return userService.addUser(dto);
     }
 
-    @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody UserDTO dto) {
-        return userService.updateUser(id, dto);
+    @PutMapping
+    public User updateUser(@RequestBody User user) {
+        return userService.updateUser(user);
     }
 
     @PutMapping("/{id}/friends/{friendId}")

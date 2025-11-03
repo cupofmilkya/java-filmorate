@@ -45,27 +45,28 @@ public class UserService {
         return user;
     }
 
-    public User updateUser(Long id, UserDTO dto) {
-        User user = convertToUser(dto);
-        user.setId(id);
-        validate(user);
-
-        if (userStorage.getUser(id) == null) {
-            throw new NotFoundException("Пользователь с id " + id + " не найден");
+    public User updateUser(User user) {
+        if (user.getId() == null) {
+            throw new ValidationException("ID не указан");
         }
 
-        userStorage.updateUser(id, user);
-        log.info("Обновлен пользователь с id={}, {}", id, user);
+        validate(user);
+
+        if (userStorage.getUser(user.getId()) == null) {
+            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
+        }
+
+        userStorage.updateUser(user.getId(), user);
         return user;
     }
 
     public User addFriend(Long id, Long friendId) {
-        if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
         User user = userStorage.getUser(id);
         User friend = userStorage.getUser(friendId);
 
         if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
         if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
 
         userStorage.addFriend(id, friendId);
         return userStorage.getUser(id);
@@ -79,7 +80,6 @@ public class UserService {
         if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
 
         userStorage.deleteFriend(id, friendId);
-
         return userStorage.getUser(id);
     }
 

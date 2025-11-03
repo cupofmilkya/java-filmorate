@@ -13,9 +13,7 @@ public class FilmMapper implements RowMapper<Film> {
                 .id(rs.getLong("film_id"))
                 .name(rs.getString("name"))
                 .description(rs.getString("description"))
-                .releaseDate(rs.getDate("release_date") != null
-                        ? rs.getDate("release_date").toLocalDate()
-                        : null)
+                .releaseDate(rs.getDate("release_date") != null ? rs.getDate("release_date").toLocalDate() : null)
                 .duration(rs.getInt("duration"))
                 .build();
     }
