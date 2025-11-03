@@ -11,10 +11,11 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FilmDTO {
+    private Long id;
     private String name;
     private String description;
     private LocalDate releaseDate;
     private int duration;
-    private Set<Integer> genreIds;
+    private Set<GenreDTO> genres;
     private MpaDTO mpa;
 }

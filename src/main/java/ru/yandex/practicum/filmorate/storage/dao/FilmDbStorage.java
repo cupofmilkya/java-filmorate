@@ -3,12 +3,16 @@ package ru.yandex.practicum.filmorate.storage.dao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,13 +30,19 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public void addFilm(Film film) {
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql,
-                film.getName(),
-                film.getDescription(),
-                film.getReleaseDate(),
-                film.getDuration(),
-                film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : null
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, film.getName());
+            ps.setString(2, film.getDescription());
+            ps.setDate(3, film.getReleaseDate() != null ? java.sql.Date.valueOf(film.getReleaseDate()) : null);
+            ps.setInt(4, film.getDuration());
+            ps.setInt(5, film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : 0);
+            return ps;
+        }, keyHolder);
+
+        film.setId(keyHolder.getKey().longValue());
     }
 
     @Override
@@ -81,7 +91,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql, userId, filmId);
     }
 
-    private Set<Long> getLikes(Long filmId) {
+    public Set<Long> getLikes(Long filmId) {
         String sql = "SELECT user_id FROM likes WHERE film_id = ?";
         return new HashSet<>(jdbcTemplate.queryForList(sql, Long.class, filmId));
     }

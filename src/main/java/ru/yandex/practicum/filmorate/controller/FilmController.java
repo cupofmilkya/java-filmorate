@@ -2,15 +2,17 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
+import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
 import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -38,15 +40,27 @@ public class FilmController {
         return convertToDto(film);
     }
 
-    @PutMapping("/{id}")
-    public FilmDTO updateFilm(@PathVariable Long id, @RequestBody FilmDTO filmDTO) {
+    @PutMapping
+    public FilmDTO updateFilm(@RequestBody FilmDTO filmDTO) {
         Film film = convertToFilm(filmDTO);
-        film.setId(id);
         return convertToDto(filmService.updateFilm(film));
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public FilmDTO addLike(@PathVariable long id, @PathVariable long userId) {
+        Film film = filmService.sendLike(id, userId);
+        return convertToDto(film);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public FilmDTO removeLike(@PathVariable long id, @PathVariable long userId) {
+        Film film = filmService.removeLike(id, userId);
+        return convertToDto(film);
     }
 
     private FilmDTO convertToDto(Film film) {
         return FilmDTO.builder()
+                .id(film.getId())
                 .name(film.getName())
                 .description(film.getDescription())
                 .releaseDate(film.getReleaseDate())
@@ -54,31 +68,54 @@ public class FilmController {
                 .mpa(film.getMpaRating() != null
                         ? new MpaDTO(film.getMpaRating().ordinal() + 1, film.getMpaRating().toString())
                         : null)
-                .genreIds(film.getGenres() != null
-                        ? film.getGenres().stream().map(Enum::ordinal).map(i -> i + 1).collect(Collectors.toSet())
-                        : null)
+                .genres(film.getGenres() != null
+                        ? film.getGenres().stream()
+                        .map(g -> new GenreDTO(g.ordinal() + 1, g.name()))
+                        .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparingInt(GenreDTO::getId))))
+                        : new TreeSet<>())
                 .build();
     }
 
     private Film convertToFilm(FilmDTO dto) {
         Film film = new Film();
+        film.setId(dto.getId());
         film.setName(dto.getName());
         film.setDescription(dto.getDescription());
         film.setReleaseDate(dto.getReleaseDate());
         film.setDuration(dto.getDuration());
 
         if (dto.getMpa() != null) {
-            int mpaId = dto.getMpa().getId();
-            film.setMpaRating(MpaRating.values()[mpaId - 1]);
+            Long mpaId = (long) dto.getMpa().getId();
+            if (mpaId > 0 && mpaId <= MpaRating.values().length) {
+                film.setMpaRating(MpaRating.values()[mpaId.intValue() - 1]);
+            } else {
+                throw new NotFoundException("Не существует MPA с ID: " + mpaId);
+            }
+        } else {
+            throw new ValidationException("Не указан ID MPA");
         }
 
-        if (dto.getGenreIds() != null) {
-            Set<Genre> genres = dto.getGenreIds().stream()
-                    .map(id -> Genre.values()[id - 1])
+        if (dto.getGenres() != null && !dto.getGenres().isEmpty()) {
+            Set<Genre> genres = dto.getGenres().stream()
+                    .map(g -> {
+                        int index = g.getId() - 1;
+                        if (index < 0 || index >= Genre.values().length) {
+                            throw new NotFoundException("Не существует жанра с ID : " + g.getId());
+                        }
+                        return Genre.values()[index];
+                    })
                     .collect(Collectors.toSet());
             film.setGenres(genres);
+        } else {
+            film.setGenres(Set.of());
         }
-
         return film;
+    }
+
+    @GetMapping("/popular")
+    public List<FilmDTO> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
+        return filmService.getPopularFilms((int) count).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 }

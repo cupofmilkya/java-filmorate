@@ -14,8 +14,6 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -55,10 +53,10 @@ public class FilmService {
         validate(film);
 
         if (filmStorage.getFilm(film.getId()) == null) {
-            throw new NotFoundException("Пользователь с id " + film.getId() + " не найден");
+            throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
         }
 
-        filmStorage.updateFilm(film.getId(), film); // нет смысла делать toBuilder()
+        filmStorage.updateFilm(film.getId(), film);
         log.info("Обновлен фильм с id={}, {}", film.getId(), film);
         return film;
     }
@@ -109,11 +107,11 @@ public class FilmService {
         return film;
     }
 
-    public List<Film> getPopularFilms(long count) {
+    public Collection<Film> getPopularFilms(int count) {
         return filmStorage.getFilms().values().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void validate(Film film) {

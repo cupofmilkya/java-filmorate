@@ -111,12 +111,16 @@ public class UserDbStorage implements UserStorage {
 
     private void loadAllFriends(User user) {
         user.getFriends().clear();
-        String sql = "SELECT user_id, friend_id, confirmed FROM user_friendships WHERE user_id = ?";
+        String sql = "SELECT user_id, friend_id, confirmed FROM user_friendships WHERE user_id = ? OR friend_id = ?";
 
         jdbcTemplate.query(sql, rs -> {
+            Long userId = rs.getLong("user_id");
             Long friendId = rs.getLong("friend_id");
             boolean confirmed = rs.getBoolean("confirmed");
-            user.getFriends().put(friendId, confirmed ? FriendshipStatus.CONFIRMED : FriendshipStatus.UNCONFIRMED);
-        }, user.getId());
+
+            Long otherId = userId.equals(user.getId()) ? friendId : userId;
+
+            user.getFriends().put(otherId, confirmed ? FriendshipStatus.CONFIRMED : FriendshipStatus.UNCONFIRMED);
+        }, user.getId(), user.getId());
     }
 }
