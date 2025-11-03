@@ -83,33 +83,41 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long userId, Long friendId) {
-        String sql = "INSERT INTO user_friendships (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+        getUser(userId);
+        getUser(friendId);
 
-        if (userHasFriend(userId, friendId)) {
-            return;
+        String checkReverseSql = "SELECT COUNT(*) FROM friends WHERE user_id=? AND friend_id=?";
+        boolean reverseExists = jdbcTemplate.queryForObject(checkReverseSql, Integer.class, friendId, userId) > 0;
+
+        if (reverseExists) {
+            String confirmSql = "UPDATE friends SET confirmed = TRUE WHERE user_id=? AND friend_id=?";
+            jdbcTemplate.update(confirmSql, friendId, userId);
         }
 
-        jdbcTemplate.update(sql, userId, friendId);
-    }
+        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id=? AND friend_id=?";
+        boolean exists = jdbcTemplate.queryForObject(checkSql, Integer.class, userId, friendId) > 0;
 
-    private boolean userHasFriend(Long userId, Long friendId) {
-        String sql = "SELECT COUNT(*) FROM user_friendships WHERE user_id = ? AND friend_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, friendId);
-        return count != null && count > 0;
+        if (!exists) {
+            String insertSql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+            jdbcTemplate.update(insertSql, userId, friendId);
+        }
     }
 
     @Override
     public void deleteFriend(Long userId, Long friendId) {
-        String deleteSql = "DELETE FROM user_friendships WHERE (user_id = ? AND friend_id = ?)" +
-                "OR (user_id = ? AND friend_id = ?)";
-        jdbcTemplate.update(deleteSql, userId, friendId, friendId, userId);
+        getUser(userId);
+        getUser(friendId);
+
+        String sql = "DELETE FROM friends WHERE user_id=? AND friend_id=?";
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     private void loadAllFriends(User user) {
-        String sql = "SELECT friend_id FROM user_friendships WHERE user_id = ? AND confirmed = TRUE";
-
-        List<Long> friendIds = jdbcTemplate.queryForList(sql, Long.class, user.getId());
-
-        friendIds.forEach(id -> user.getFriends().put(id, FriendshipStatus.CONFIRMED));
+        String sql = "SELECT user_id, friend_id, confirmed FROM user_friendships WHERE user_id = ?";
+        jdbcTemplate.query(sql, rs -> {
+            Long friendId = rs.getLong("friend_id");
+            boolean confirmed = rs.getBoolean("confirmed");
+            user.getFriends().put(friendId, confirmed ? FriendshipStatus.CONFIRMED : FriendshipStatus.UNCONFIRMED);
+        }, user.getId());
     }
 }
