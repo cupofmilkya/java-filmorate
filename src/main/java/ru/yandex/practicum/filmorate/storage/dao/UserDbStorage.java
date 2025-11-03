@@ -53,8 +53,8 @@ public class UserDbStorage implements UserStorage {
     public User getUser(long id) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
         List<User> users = jdbcTemplate.query(sql, new UserMapper(), id);
-        if (users.isEmpty()) return null;  // Возвращаем null, если нет
-        User user = users.get(0);
+        if (users.isEmpty()) return null;
+        User user = users.getFirst();
         loadAllFriends(user);
         return user;
     }
@@ -85,26 +85,21 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void addFriend(Long userId, Long friendId) {
         if (userId.equals(friendId)) {
-            throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
+            throw new FriendsAddingException("Нельзя добавить себя в друзья");
         }
 
-        String checkSql = "SELECT COUNT(*) FROM user_friendships WHERE user_id = ? AND friend_id = ?";
-        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, userId, friendId);
+        String checkReverseSql = "SELECT COUNT(*) FROM user_friendships WHERE user_id = ? AND friend_id = ?";
+        Integer reverseExists = jdbcTemplate.queryForObject(checkReverseSql, Integer.class, friendId, userId);
 
-        if (count != null && count > 0) {
+        if (reverseExists != null && reverseExists > 0) {
+            String updateSql = "UPDATE user_friendships SET confirmed = TRUE WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)";
+            jdbcTemplate.update(updateSql, userId, friendId, friendId, userId);
             return;
         }
 
-        count = jdbcTemplate.queryForObject(checkSql, Integer.class, friendId, userId);
-
-        if (count != null && count > 0) {
-            String updateSql = "UPDATE user_friendships SET confirmed = TRUE WHERE user_id = ? AND friend_id = ?";
-            jdbcTemplate.update(updateSql, friendId, userId);
-            jdbcTemplate.update(updateSql, userId, friendId);
-        } else {
-            String insertSql = "INSERT INTO user_friendships (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
-            jdbcTemplate.update(insertSql, userId, friendId);
-        }
+        String insertSql = "INSERT INTO user_friendships (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
+        jdbcTemplate.update(insertSql, userId, friendId);
+        jdbcTemplate.update(insertSql, friendId, userId);
     }
 
     @Override
@@ -115,17 +110,10 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void loadAllFriends(User user) {
-        user.getFriends().clear();
-        String sql = "SELECT user_id, friend_id, confirmed FROM user_friendships WHERE user_id = ? OR friend_id = ?";
+        String sql = "SELECT friend_id FROM user_friendships WHERE user_id = ? AND confirmed = TRUE";
 
-        jdbcTemplate.query(sql, rs -> {
-            Long userId = rs.getLong("user_id");
-            Long friendId = rs.getLong("friend_id");
-            boolean confirmed = rs.getBoolean("confirmed");
+        List<Long> friendIds = jdbcTemplate.queryForList(sql, Long.class, user.getId());
 
-            Long otherId = userId.equals(user.getId()) ? friendId : userId;
-
-            user.getFriends().put(otherId, confirmed ? FriendshipStatus.CONFIRMED : FriendshipStatus.UNCONFIRMED);
-        }, user.getId(), user.getId());
+        friendIds.forEach(id -> user.getFriends().put(id, FriendshipStatus.CONFIRMED));
     }
 }
