@@ -45,18 +45,17 @@ public class UserService {
         return user;
     }
 
-    public User updateUser(User user) {
-        if (user.getId() == null) {
-            throw new ValidationException("ID не указан");
-        }
-
+    public User updateUser(Long id, UserDTO dto) {
+        User user = convertToUser(dto);
+        user.setId(id);
         validate(user);
 
-        if (userStorage.getUser(user.getId()) == null) {
-            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
+        if (userStorage.getUser(id) == null) {
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
 
-        userStorage.updateUser(user.getId(), user);
+        userStorage.updateUser(id, user);
+        log.info("Обновлен пользователь с id={}, {}", id, user);
         return user;
     }
 
@@ -68,20 +67,20 @@ public class UserService {
         if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
         if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
 
-        // Одностороннее добавление
-        user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
-        userStorage.updateUser(id, user);
-
+        userStorage.addFriend(id, friendId);
+        user.addFriend(friendId);
         return user;
     }
 
     public User deleteFriend(Long id, Long friendId) {
         User user = userStorage.getUser(id);
+        User friend = userStorage.getUser(friendId);
+
         if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
+        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
 
-        user.getFriends().remove(friendId);
-        userStorage.updateUser(id, user);
-
+        userStorage.deleteFriend(id, friendId);
+        user.deleteFriend(friendId);
         return user;
     }
 
@@ -108,6 +107,7 @@ public class UserService {
 
         return commonIds.stream()
                 .map(userStorage::getUser)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 

@@ -6,10 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -46,24 +44,19 @@ public class UserDbStorage implements UserStorage {
         }, keyHolder);
 
         user.setId(keyHolder.getKey().longValue());
-        loadAllFriends(user);
     }
 
     @Override
     public User getUser(long id) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
         List<User> users = jdbcTemplate.query(sql, new UserMapper(), id);
-        if (users.isEmpty()) return null;  // Возвращаем null, если нет
-        User user = users.get(0);
-        loadAllFriends(user);
-        return user;
+        return users.isEmpty() ? null : users.get(0);
     }
 
     @Override
     public Map<Long, User> getUsers() {
         String sql = "SELECT * FROM users";
         List<User> users = jdbcTemplate.query(sql, new UserMapper());
-        users.forEach(this::loadAllFriends);
         return users.stream().collect(Collectors.toMap(User::getId, u -> u));
     }
 
@@ -75,8 +68,8 @@ public class UserDbStorage implements UserStorage {
                 user.getLogin(),
                 user.getName(),
                 Date.valueOf(user.getBirthday()),
-                id
-        );
+                id);
+
         if (updated == 0) {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
@@ -84,48 +77,22 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long userId, Long friendId) {
-        if (userId.equals(friendId)) {
-            throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
-        }
-
         String checkSql = "SELECT COUNT(*) FROM user_friendships WHERE user_id = ? AND friend_id = ?";
         Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, userId, friendId);
 
-        if (count != null && count > 0) {
-            return;
-        }
+        if (count != null && count > 0) return;
 
-        count = jdbcTemplate.queryForObject(checkSql, Integer.class, friendId, userId);
-
-        if (count != null && count > 0) {
-            String updateSql = "UPDATE user_friendships SET confirmed = TRUE WHERE user_id = ? AND friend_id = ?";
-            jdbcTemplate.update(updateSql, friendId, userId);
-            jdbcTemplate.update(updateSql, userId, friendId);
-        } else {
-            String insertSql = "INSERT INTO user_friendships (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
-            jdbcTemplate.update(insertSql, userId, friendId);
-        }
+        String insertSql = "INSERT INTO user_friendships (user_id, friend_id) VALUES (?, ?)";
+        jdbcTemplate.update(insertSql, userId, friendId);
     }
 
     @Override
     public void deleteFriend(Long userId, Long friendId) {
-        String deleteSql = "DELETE FROM user_friendships WHERE (user_id = ? AND friend_id = ?)" +
-                "OR (user_id = ? AND friend_id = ?)";
-        jdbcTemplate.update(deleteSql, userId, friendId, friendId, userId);
-    }
+        String deleteSql = "DELETE FROM user_friendships WHERE user_id = ? AND friend_id = ?";
+        int deleted = jdbcTemplate.update(deleteSql, userId, friendId);
 
-    private void loadAllFriends(User user) {
-        user.getFriends().clear();
-        String sql = "SELECT user_id, friend_id, confirmed FROM user_friendships WHERE user_id = ? OR friend_id = ?";
-
-        jdbcTemplate.query(sql, rs -> {
-            Long userId = rs.getLong("user_id");
-            Long friendId = rs.getLong("friend_id");
-            boolean confirmed = rs.getBoolean("confirmed");
-
-            Long otherId = userId.equals(user.getId()) ? friendId : userId;
-
-            user.getFriends().put(otherId, confirmed ? FriendshipStatus.CONFIRMED : FriendshipStatus.UNCONFIRMED);
-        }, user.getId(), user.getId());
+        if (deleted == 0) {
+            throw new NotFoundException("Дружба между пользователями не найдена");
+        }
     }
 }
