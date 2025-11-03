@@ -54,14 +54,11 @@ public class FilmService {
     public Film updateFilm(Film film) {
         validate(film);
 
-        if (film.getId() != null && !filmStorage.getFilms().containsKey(film.getId())) {
-            log.warn("Фильм не прошёл валидацию по id (такого нет)");
-            throw new NotFoundException("Фильма с id " + film.getId() + " нет");
+        if (film.getId() == null || !filmStorage.getFilms().containsKey(film.getId())) {
+            throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
         }
 
-        Film updatedFilm = film.toBuilder().build();
-        filmStorage.updateFilm(film.getId(), updatedFilm);
-
+        filmStorage.updateFilm(film.getId(), film); // нет смысла делать toBuilder()
         log.info("Обновлен фильм с id={}, {}", film.getId(), film);
         return film;
     }

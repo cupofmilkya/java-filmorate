@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -69,15 +68,18 @@ public class FilmController {
         film.setReleaseDate(dto.getReleaseDate());
         film.setDuration(dto.getDuration());
 
-        if (dto.getMpa() != null) {
-            Long mpaId = (long) dto.getMpa().getId();
-            if (mpaId != null && mpaId > 0 && mpaId <= MpaRating.values().length) {
-                film.setMpaRating(MpaRating.values()[mpaId.intValue() - 1]);
-            } else {
-                throw new ValidationException("Неверный ID MPA: " + mpaId);
-            }
-        } else {
-            film.setMpaRating(null);
+        if (dto.getGenreIds() != null && !dto.getGenreIds().isEmpty()) {
+            Set<Genre> genres = dto.getGenreIds().stream()
+                    .map(id -> {
+                        int idx = id - 1;
+                        if (idx >= 0 && idx < Genre.values().length) {
+                            return Genre.values()[idx];
+                        } else {
+                            throw new ValidationException("Неверный ID жанра: " + id);
+                        }
+                    })
+                    .collect(Collectors.toSet());
+            film.setGenres(genres);
         }
 
         if (dto.getGenreIds() != null && !dto.getGenreIds().isEmpty()) {

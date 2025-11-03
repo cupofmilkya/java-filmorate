@@ -1,9 +1,9 @@
 package ru.yandex.practicum.filmorate.mappers;
 
-import java.sql.ResultSet;
 import org.springframework.jdbc.core.RowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class FilmMapper implements RowMapper<Film> {
@@ -13,7 +13,9 @@ public class FilmMapper implements RowMapper<Film> {
                 .id(rs.getLong("film_id"))
                 .name(rs.getString("name"))
                 .description(rs.getString("description"))
-                .releaseDate(rs.getDate("release_date").toLocalDate())
+                .releaseDate(rs.getDate("release_date") != null
+                        ? rs.getDate("release_date").toLocalDate()
+                        : null)
                 .duration(rs.getInt("duration"))
                 .build();
     }

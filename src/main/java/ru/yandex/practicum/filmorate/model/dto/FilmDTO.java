@@ -9,6 +9,7 @@ import java.util.Set;
 @Setter
 @Builder(toBuilder = true)
 @AllArgsConstructor
+@NoArgsConstructor
 public class FilmDTO {
     private String name;
     private String description;

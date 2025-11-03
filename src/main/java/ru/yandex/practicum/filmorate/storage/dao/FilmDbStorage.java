@@ -33,7 +33,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.getDescription(),
                 film.getReleaseDate(),
                 film.getDuration(),
-                film.getMpaRating().ordinal() + 1
+                film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : null
         );
     }
 
