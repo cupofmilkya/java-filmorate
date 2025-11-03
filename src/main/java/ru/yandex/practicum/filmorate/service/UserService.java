@@ -31,6 +31,7 @@ public class UserService {
     public User getUser(Long id) {
         User user = userStorage.getUser(id);
         if (user == null) {
+            log.warn("Не найден пользователь с id {}", id);
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
         return user;
@@ -47,16 +48,19 @@ public class UserService {
 
     public User updateUser(User user) {
         if (user.getId() == null) {
+            log.warn("Обновление пользователя без указания id");
             throw new ValidationException("ID не указан");
         }
 
         validate(user);
 
         if (userStorage.getUser(user.getId()) == null) {
+            log.warn("Не найден пользователь для обновления с id {}", user.getId());
             throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
         }
 
         userStorage.updateUser(user.getId(), user);
+        log.info("Обновлен пользователь с id={}, {}", user.getId(), user);
         return user;
     }
 
@@ -64,11 +68,21 @@ public class UserService {
         User user = userStorage.getUser(id);
         User friend = userStorage.getUser(friendId);
 
-        if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
-        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
-        if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
+        if (user == null) {
+            log.warn("Попытка добавить друга: не найден пользователь {}", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
+        if (friend == null) {
+            log.warn("Попытка добавить в друзья несуществующего пользователя {}", friendId);
+            throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        }
+        if (id.equals(friendId)) {
+            log.warn("Пользователь {} пытается добавить себя в друзья", id);
+            throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
+        }
 
         userStorage.addFriend(id, friendId);
+        log.info("Пользователь {} добавил в друзья {}", id, friendId);
         return userStorage.getUser(id);
     }
 
@@ -76,17 +90,30 @@ public class UserService {
         User user = userStorage.getUser(id);
         User friend = userStorage.getUser(friendId);
 
-        if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
-        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        if (user == null) {
+            log.warn("Попытка удалить друга: не найден пользователь {}", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
+        if (friend == null) {
+            log.warn("Попытка удалить друга: не найден пользователь {}", friendId);
+            throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        }
+        if (id.equals(friendId)) {
+            log.warn("Пользователь {} пытается удалить себя из друзей", id);
+            throw new FriendsAddingException("Пользователь пытается удалить себя из друзей");
+        }
 
         userStorage.deleteFriend(id, friendId);
-        user.deleteFriend(friendId);
-        return user;
+        log.info("Пользователь {} удалил из друзей {}", id, friendId);
+        return userStorage.getUser(id);
     }
 
     public Set<User> getFriends(Long id) {
         User user = userStorage.getUser(id);
-        if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
+        if (user == null) {
+            log.warn("Попытка получить список друзей несуществующего пользователя {}", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
 
         return user.getFriends().keySet().stream()
                 .map(userStorage::getUser)
@@ -98,12 +125,20 @@ public class UserService {
         User user = userStorage.getUser(id);
         User other = userStorage.getUser(otherId);
 
-        if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
-        if (other == null) throw new NotFoundException("Пользователь с id " + otherId + " не найден");
+        if (user == null) {
+            log.warn("Попытка получить общих друзей несуществующего пользователя {}", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
+        if (other == null) {
+            log.warn("Попытка получить общих друзей несуществующего пользователя {}", otherId);
+            throw new NotFoundException("Пользователь с id " + otherId + " не найден");
+        }
 
         Set<Long> commonIds = user.getFriends().keySet().stream()
                 .filter(other.getFriends()::containsKey)
                 .collect(Collectors.toSet());
+
+        log.info("Общие друзья {} и {}: {}", id, otherId, commonIds);
 
         return commonIds.stream()
                 .map(userStorage::getUser)
@@ -115,26 +150,39 @@ public class UserService {
         User user = new User();
         user.setEmail(dto.getEmail());
         user.setLogin(dto.getLogin());
-        user.setName(dto.getName() == null || dto.getName().isBlank() ? dto.getLogin() : dto.getName());
+        user.setName(dto.getName() == null || dto.getName().isBlank()
+                ? dto.getLogin()
+                : dto.getName());
         user.setBirthday(dto.getBirthday());
 
         if (dto.getFriendIds() != null) {
-            dto.getFriendIds().forEach(id -> user.getFriends().put(id, FriendshipStatus.CONFIRMED));
+            dto.getFriendIds().forEach(id -> user.getFriends()
+                    .put(id, FriendshipStatus.CONFIRMED));
         }
 
         return user;
     }
 
     private void validate(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank())
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            log.warn("Ошибка валидации: email пустой");
             throw new ValidationException("Email не может быть пустым");
-        if (!user.getEmail().contains("@"))
+        }
+        if (!user.getEmail().contains("@")) {
+            log.warn("Ошибка валидации: email {} не содержит @", user.getEmail());
             throw new ValidationException("Email должен содержать @");
-        if (user.getLogin() == null || user.getLogin().isBlank())
+        }
+        if (user.getLogin() == null || user.getLogin().isBlank()) {
+            log.warn("Ошибка валидации: пустой login");
             throw new ValidationException("Login не может быть пустым");
-        if (user.getLogin().contains(" "))
+        }
+        if (user.getLogin().contains(" ")) {
+            log.warn("Ошибка валидации: login {} содержит пробелы", user.getLogin());
             throw new ValidationException("Login не может содержать пробелы");
-        if (user.getBirthday().isAfter(LocalDate.now()))
+        }
+        if (user.getBirthday().isAfter(LocalDate.now())) {
+            log.warn("Ошибка валидации: дата рождения {} в будущем", user.getBirthday());
             throw new ValidationException("Дата рождения не может быть в будущем");
+        }
     }
 }

@@ -45,6 +45,16 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
     }
 
+    @Override
+    public void sendLike(Long userId, Long filmId) {
+
+    }
+
+    @Override
+    public void removeLike(Long userId, Long filmId) {
+
+    }
+
     private long getNextId() {
         return films.keySet().stream()
                 .mapToLong(Long::longValue)

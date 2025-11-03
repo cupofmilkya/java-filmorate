@@ -8,6 +8,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 
@@ -38,7 +40,12 @@ public class FilmDbStorage implements FilmStorage {
             ps.setString(2, film.getDescription());
             ps.setDate(3, film.getReleaseDate() != null ? java.sql.Date.valueOf(film.getReleaseDate()) : null);
             ps.setInt(4, film.getDuration());
-            ps.setInt(5, film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : 0);
+
+            if (film.getMpaRating() != null) {
+                ps.setInt(5, film.getMpaRating().ordinal() + 1);
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
             return ps;
         }, keyHolder);
 
@@ -53,6 +60,30 @@ public class FilmDbStorage implements FilmStorage {
 
         Film film = films.getFirst();
         film.setLikes(getLikes(film.getId()));
+
+        String mpaSql = "SELECT mpa_id FROM films WHERE film_id = ?";
+        Integer mpaId = jdbcTemplate.queryForObject(mpaSql, Integer.class, film.getId());
+        if (mpaId != null && mpaId > 0 && mpaId <= MpaRating.values().length) {
+            film.setMpaRating(MpaRating.values()[mpaId - 1]);
+        }
+
+        String genresSql = "SELECT genre_id FROM genre_film WHERE film_id = ?";
+        List<Integer> genreIds = jdbcTemplate.queryForList(genresSql, Integer.class, film.getId());
+        if (genreIds != null && !genreIds.isEmpty()) {
+            Set<Genre> genres = genreIds.stream()
+                    .filter(Objects::nonNull)
+                    .map(idVal -> {
+                        int idx = idVal - 1;
+                        if (idx >= 0 && idx < Genre.values().length) return Genre.values()[idx];
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            film.setGenres(genres);
+        } else {
+            film.setGenres(Set.of());
+        }
+
         return film;
     }
 
@@ -61,7 +92,28 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT * FROM films";
         List<Film> films = jdbcTemplate.query(sql, new FilmMapper());
 
-        films.forEach(f -> f.setLikes(getLikes(f.getId())));
+        for (Film f : films) {
+            f.setLikes(getLikes(f.getId()));
+
+            // mpa
+            Integer mpaId = jdbcTemplate.queryForObject(
+                    "SELECT mpa_id FROM films WHERE film_id = ?", Integer.class, f.getId());
+            if (mpaId != null && mpaId > 0 && mpaId <= MpaRating.values().length) {
+                f.setMpaRating(MpaRating.values()[mpaId - 1]);
+            }
+
+            // genres
+            List<Integer> genreIds = jdbcTemplate.queryForList(
+                    "SELECT genre_id FROM genre_film WHERE film_id = ?", Integer.class, f.getId());
+            if (genreIds != null && !genreIds.isEmpty()) {
+                Set<Genre> genres = genreIds.stream()
+                        .map(idVal -> Genre.values()[idVal - 1])
+                        .collect(Collectors.toSet());
+                f.setGenres(genres);
+            } else {
+                f.setGenres(Set.of());
+            }
+        }
         return films.stream().collect(Collectors.toMap(Film::getId, f -> f));
     }
 

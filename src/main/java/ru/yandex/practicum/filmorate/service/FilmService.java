@@ -65,22 +65,18 @@ public class FilmService {
         Film film = filmStorage.getFilm(id);
         User user = userStorage.getUser(userId);
 
-        if (film == null) {
-            throw new NotFoundException("Фильм с id " + id + " не найден");
-        }
-        if (user == null) {
-            throw new NotFoundException("Пользователь с id " + userId + " не найден");
-        }
+        if (film == null) throw new NotFoundException("Фильм с id " + id + " не найден");
+        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
 
         if (film.getLikes().contains(userId)) {
-            throw new LikesSendingException("Пользователи с айди " + userId + " уже добавил лайк посту с айди  "
-                    + id);
+            throw new LikesSendingException("Пользователь с id " + userId + " уже добавил лайк фильму с id " + id);
         }
+
+        filmStorage.sendLike(userId, id);
 
         film.addLike(userId);
 
         log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
-
         return film;
     }
 
@@ -88,22 +84,17 @@ public class FilmService {
         Film film = filmStorage.getFilm(id);
         User user = userStorage.getUser(userId);
 
-        if (film == null) {
-            throw new NotFoundException("Фильм с id " + id + " не найден");
-        }
-        if (user == null) {
-            throw new NotFoundException("Пользователь с id " + userId + " не найден");
-        }
+        if (film == null) throw new NotFoundException("Фильм с id " + id + " не найден");
+        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
 
         if (!film.getLikes().contains(userId)) {
-            throw new LikesSendingException("Пользователи с айди " + userId + " не добавлял лайк посту с айди  "
-                    + id);
+            throw new LikesSendingException("Пользователь с id " + userId + " не добавлял лайк фильму с id " + id);
         }
 
+        filmStorage.removeLike(userId, id);
         film.removeLike(userId);
 
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
-
         return film;
     }
 
