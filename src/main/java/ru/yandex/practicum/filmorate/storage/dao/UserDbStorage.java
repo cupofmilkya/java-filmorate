@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
@@ -77,13 +78,27 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long userId, Long friendId) {
+        if (userId.equals(friendId)) {
+            throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
+        }
+
         String checkSql = "SELECT COUNT(*) FROM user_friendships WHERE user_id = ? AND friend_id = ?";
         Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, userId, friendId);
 
-        if (count != null && count > 0) return;
+        if (count != null && count > 0) {
+            return;
+        }
 
-        String insertSql = "INSERT INTO user_friendships (user_id, friend_id) VALUES (?, ?)";
-        jdbcTemplate.update(insertSql, userId, friendId);
+        count = jdbcTemplate.queryForObject(checkSql, Integer.class, friendId, userId);
+
+        if (count != null && count > 0) {
+            String updateSql = "UPDATE user_friendships SET confirmed = TRUE WHERE user_id = ? AND friend_id = ?";
+            jdbcTemplate.update(updateSql, friendId, userId);
+            jdbcTemplate.update(updateSql, userId, friendId);
+        } else {
+            String insertSql = "INSERT INTO user_friendships (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+            jdbcTemplate.update(insertSql, userId, friendId);
+        }
     }
 
     @Override

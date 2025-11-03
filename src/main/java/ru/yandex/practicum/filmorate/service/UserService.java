@@ -69,8 +69,7 @@ public class UserService {
         if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
 
         userStorage.addFriend(id, friendId);
-        user.addFriend(friendId);
-        return user;
+        return userStorage.getUser(id);
     }
 
     public User deleteFriend(Long id, Long friendId) {
