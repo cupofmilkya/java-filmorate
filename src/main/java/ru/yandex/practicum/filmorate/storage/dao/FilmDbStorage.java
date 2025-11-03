@@ -40,16 +40,22 @@ public class FilmDbStorage implements FilmStorage {
             ps.setString(2, film.getDescription());
             ps.setDate(3, film.getReleaseDate() != null ? java.sql.Date.valueOf(film.getReleaseDate()) : null);
             ps.setInt(4, film.getDuration());
-
-            if (film.getMpaRating() != null) {
-                ps.setInt(5, film.getMpaRating().ordinal() + 1);
-            } else {
-                ps.setNull(5, java.sql.Types.INTEGER);
-            }
+            ps.setInt(5, film.getMpaRating().ordinal() + 1);
             return ps;
         }, keyHolder);
 
         film.setId(keyHolder.getKey().longValue());
+
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            saveGenres(film.getId(), film.getGenres());
+        }
+    }
+
+    private void saveGenres(Long filmId, Set<Genre> genres) {
+        String sql = "INSERT INTO genre_film (film_id, genre_id) VALUES (?, ?)";
+        for (Genre genre : genres) {
+            jdbcTemplate.update(sql, filmId, genre.ordinal() + 1);
+        }
     }
 
     @Override

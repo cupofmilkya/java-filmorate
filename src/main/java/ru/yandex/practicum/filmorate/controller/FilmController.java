@@ -66,10 +66,12 @@ public class FilmController {
                 .releaseDate(film.getReleaseDate())
                 .duration(film.getDuration())
                 .mpa(film.getMpaRating() != null ? MpaDTO.fromEnum(film.getMpaRating()) : null)
-                .genres(film.getGenres().stream()
+                .genres(film.getGenres() != null && !film.getGenres().isEmpty()
+                        ? film.getGenres().stream()
                         .map(GenreDTO::fromEnum)
-                        .sorted(Comparator.comparingInt(GenreDTO::getId)) // сортировка по id
-                        .collect(Collectors.toCollection(LinkedHashSet::new))) // сохраняем порядок
+                        .sorted(Comparator.comparingInt(GenreDTO::getId))
+                        .collect(Collectors.toCollection(LinkedHashSet::new))
+                        : new LinkedHashSet<>())
                 .build();
     }
 
