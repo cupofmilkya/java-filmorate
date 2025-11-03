@@ -60,12 +60,12 @@ public class UserService {
     }
 
     public User addFriend(Long id, Long friendId) {
-        if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
         User user = userStorage.getUser(id);
         User friend = userStorage.getUser(friendId);
 
         if (user == null) throw new NotFoundException("Пользователь с id " + id + " не найден");
         if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        if (id.equals(friendId)) throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
 
         userStorage.addFriend(id, friendId);
         return userStorage.getUser(id);
@@ -79,7 +79,6 @@ public class UserService {
         if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
 
         userStorage.deleteFriend(id, friendId);
-
         return userStorage.getUser(id);
     }
 

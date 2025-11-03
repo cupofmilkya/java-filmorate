@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
+import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
@@ -52,10 +53,8 @@ public class UserDbStorage implements UserStorage {
     public User getUser(long id) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
         List<User> users = jdbcTemplate.query(sql, new UserMapper(), id);
-        if (users.isEmpty()) {
-            return null;
-        }
-        User user = users.getFirst();
+        if (users.isEmpty()) return null;  // Возвращаем null, если нет
+        User user = users.get(0);
         loadAllFriends(user);
         return user;
     }
@@ -71,12 +70,16 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void updateUser(long id, User user) {
         String sql = "UPDATE users SET email=?, login=?, name=?, birthday=? WHERE user_id=?";
-        jdbcTemplate.update(sql,
+        int updated = jdbcTemplate.update(sql,
                 user.getEmail(),
                 user.getLogin(),
                 user.getName(),
                 Date.valueOf(user.getBirthday()),
-                id);
+                id
+        );
+        if (updated == 0) {
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
     }
 
     @Override
