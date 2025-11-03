@@ -85,7 +85,7 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void addFriend(Long userId, Long friendId) {
         if (userId.equals(friendId)) {
-            throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
+            throw new FriendsAddingException("Пользователь не может добавить самого себя в друзья");
         }
 
         String checkSql = "SELECT COUNT(*) FROM user_friendships WHERE user_id = ? AND friend_id = ?";
