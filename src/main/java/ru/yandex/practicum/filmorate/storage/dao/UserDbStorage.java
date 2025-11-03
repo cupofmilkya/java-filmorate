@@ -51,7 +51,11 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User getUser(long id) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
-        User user = jdbcTemplate.queryForObject(sql, new UserMapper(), id);
+        List<User> users = jdbcTemplate.query(sql, new UserMapper(), id);
+        if (users.isEmpty()) {
+            return null;
+        }
+        User user = users.getFirst();
         loadAllFriends(user);
         return user;
     }

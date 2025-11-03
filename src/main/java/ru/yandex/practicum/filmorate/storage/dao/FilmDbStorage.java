@@ -40,12 +40,12 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film getFilm(long id) {
         String sql = "SELECT * FROM films WHERE film_id = ?";
-        Film film = jdbcTemplate.queryForObject(sql, new FilmMapper(), id);
-
-        if (film != null) {
-            film.setLikes(getLikes(film.getId()));
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), id);
+        if (films.isEmpty()) {
+            return null;
         }
-
+        Film film = films.getFirst();
+        film.setLikes(getLikes(film.getId()));
         return film;
     }
 

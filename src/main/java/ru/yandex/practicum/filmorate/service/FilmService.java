@@ -54,8 +54,8 @@ public class FilmService {
     public Film updateFilm(Film film) {
         validate(film);
 
-        if (film.getId() == null || !filmStorage.getFilms().containsKey(film.getId())) {
-            throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
+        if (filmStorage.getFilm(film.getId()) == null) {
+            throw new NotFoundException("Пользователь с id " + film.getId() + " не найден");
         }
 
         filmStorage.updateFilm(film.getId(), film); // нет смысла делать toBuilder()

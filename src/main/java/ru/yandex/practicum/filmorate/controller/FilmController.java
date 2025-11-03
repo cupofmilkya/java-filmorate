@@ -1,21 +1,18 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
+import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
@@ -24,41 +21,43 @@ public class FilmController {
     private FilmService filmService;
 
     @GetMapping
-    public Collection<Film> getFilms() {
-        return filmService.getFilms();
+    public List<FilmDTO> getFilms() {
+        return filmService.getFilms().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable Long id) {
-        return filmService.getFilm(id);
+    public FilmDTO getFilmById(@PathVariable Long id) {
+        return convertToDto(filmService.getFilm(id));
     }
 
     @PostMapping
-    public Film createFilm(@RequestBody FilmDTO filmDTO) {
-        Film film = convertToFilm(filmDTO);
-        return filmService.addFilm(film);
+    public FilmDTO createFilm(@RequestBody FilmDTO filmDTO) {
+        Film film = filmService.addFilm(convertToFilm(filmDTO));
+        return convertToDto(film);
     }
 
     @PutMapping("/{id}")
-    public Film updateFilm(@PathVariable Long id, @RequestBody FilmDTO filmDTO) {
+    public FilmDTO updateFilm(@PathVariable Long id, @RequestBody FilmDTO filmDTO) {
         Film film = convertToFilm(filmDTO);
         film.setId(id);
-        return filmService.updateFilm(film);
+        return convertToDto(filmService.updateFilm(film));
     }
 
-    @PutMapping("/{id}/like/{userId}")
-    public Film sendLike(@PathVariable long id, @PathVariable long userId) {
-        return filmService.sendLike(id, userId);
-    }
-
-    @DeleteMapping("/{id}/like/{userId}")
-    public Film removeLike(@PathVariable long id, @PathVariable long userId) {
-        return filmService.removeLike(id, userId);
-    }
-
-    @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        return filmService.getPopularFilms(count);
+    private FilmDTO convertToDto(Film film) {
+        return FilmDTO.builder()
+                .name(film.getName())
+                .description(film.getDescription())
+                .releaseDate(film.getReleaseDate())
+                .duration(film.getDuration())
+                .mpa(film.getMpaRating() != null
+                        ? new MpaDTO(film.getMpaRating().ordinal() + 1, film.getMpaRating().toString())
+                        : null)
+                .genreIds(film.getGenres() != null
+                        ? film.getGenres().stream().map(Enum::ordinal).map(i -> i + 1).collect(Collectors.toSet())
+                        : null)
+                .build();
     }
 
     private Film convertToFilm(FilmDTO dto) {
@@ -68,30 +67,14 @@ public class FilmController {
         film.setReleaseDate(dto.getReleaseDate());
         film.setDuration(dto.getDuration());
 
-        if (dto.getGenreIds() != null && !dto.getGenreIds().isEmpty()) {
-            Set<Genre> genres = dto.getGenreIds().stream()
-                    .map(id -> {
-                        int idx = id - 1;
-                        if (idx >= 0 && idx < Genre.values().length) {
-                            return Genre.values()[idx];
-                        } else {
-                            throw new ValidationException("Неверный ID жанра: " + id);
-                        }
-                    })
-                    .collect(Collectors.toSet());
-            film.setGenres(genres);
+        if (dto.getMpa() != null) {
+            int mpaId = dto.getMpa().getId();
+            film.setMpaRating(MpaRating.values()[mpaId - 1]);
         }
 
-        if (dto.getGenreIds() != null && !dto.getGenreIds().isEmpty()) {
+        if (dto.getGenreIds() != null) {
             Set<Genre> genres = dto.getGenreIds().stream()
-                    .map(id -> {
-                        int idx = id - 1;
-                        if (idx >= 0 && idx < Genre.values().length) {
-                            return Genre.values()[idx];
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
+                    .map(id -> Genre.values()[id - 1])
                     .collect(Collectors.toSet());
             film.setGenres(genres);
         }
