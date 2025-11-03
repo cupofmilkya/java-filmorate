@@ -30,6 +30,14 @@ public class FilmService {
         return filmStorage.getFilms().values();
     }
 
+    public Film getFilm(Long id) {
+        Film film = filmStorage.getFilm(id);
+        if (film == null) {
+            throw new NotFoundException("Фильм с id " + id + " не найден");
+        }
+        return film;
+    }
+
     public Film addFilm(Film film) {
         validate(film);
         if (film.getId() != null && filmStorage.getFilms().containsKey(film.getId())) {
