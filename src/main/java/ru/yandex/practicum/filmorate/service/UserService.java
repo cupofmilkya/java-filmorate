@@ -6,9 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.model.dto.UserDTO;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
@@ -37,8 +35,7 @@ public class UserService {
         return user;
     }
 
-    public User addUser(UserDTO dto) {
-        User user = convertToUser(dto);
+    public User addUser(User user) {
         validate(user);
 
         userStorage.addUser(user);
@@ -144,23 +141,6 @@ public class UserService {
                 .map(userStorage::getUser)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-    }
-
-    private User convertToUser(UserDTO dto) {
-        User user = new User();
-        user.setEmail(dto.getEmail());
-        user.setLogin(dto.getLogin());
-        user.setName(dto.getName() == null || dto.getName().isBlank()
-                ? dto.getLogin()
-                : dto.getName());
-        user.setBirthday(dto.getBirthday());
-
-        if (dto.getFriendIds() != null) {
-            dto.getFriendIds().forEach(id -> user.getFriends()
-                    .put(id, FriendshipStatus.CONFIRMED));
-        }
-
-        return user;
     }
 
     private void validate(User user) {

@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
@@ -23,39 +25,56 @@ public class FilmController {
     private FilmService filmService;
 
     @GetMapping
-    public List<FilmDTO> getFilms() {
-        return filmService.getFilms().stream()
+    public ResponseEntity<List<FilmDTO>> getFilms() {
+        List<FilmDTO> films = filmService.getFilms().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ResponseEntity.ok(films);
     }
 
     @GetMapping("/{id}")
-    public FilmDTO getFilmById(@PathVariable Long id) {
-        return convertToDto(filmService.getFilm(id));
+    public ResponseEntity<FilmDTO> getFilmById(@PathVariable Long id) {
+        FilmDTO filmdto = convertToDto(filmService.getFilm(id));
+
+        return ResponseEntity.ok(filmdto);
     }
 
     @PostMapping
-    public FilmDTO createFilm(@RequestBody FilmDTO filmDTO) {
-        Film film = filmService.addFilm(convertToFilm(filmDTO));
-        return convertToDto(film);
+    public ResponseEntity<FilmDTO> createFilm(@RequestBody FilmDTO filmDTO) {
+        FilmDTO filmdto = convertToDto(filmService.addFilm(convertToFilm(filmDTO)));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(filmdto);
     }
 
     @PutMapping
-    public FilmDTO updateFilm(@RequestBody FilmDTO filmDTO) {
-        Film film = convertToFilm(filmDTO);
-        return convertToDto(filmService.updateFilm(film));
+    public ResponseEntity<FilmDTO> updateFilm(@RequestBody FilmDTO filmDTO) {
+        FilmDTO filmdto = convertToDto(filmService.updateFilm(convertToFilm(filmDTO)));
+
+        return ResponseEntity.ok(filmdto);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public FilmDTO addLike(@PathVariable long id, @PathVariable long userId) {
-        Film film = filmService.sendLike(id, userId);
-        return convertToDto(film);
+    public ResponseEntity<FilmDTO> addLike(@PathVariable long id, @PathVariable long userId) {
+        FilmDTO filmdto = convertToDto(filmService.sendLike(id, userId));
+
+        return ResponseEntity.ok(filmdto);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public FilmDTO removeLike(@PathVariable long id, @PathVariable long userId) {
-        Film film = filmService.removeLike(id, userId);
-        return convertToDto(film);
+    public ResponseEntity<FilmDTO> removeLike(@PathVariable long id, @PathVariable long userId) {
+        FilmDTO filmdto = convertToDto(filmService.removeLike(id, userId));
+
+        return ResponseEntity.ok(filmdto);
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
+        List<FilmDTO> films = filmService.getPopularFilms((int) count).stream()
+                .map(this::convertToDto)
+                .toList();
+
+        return ResponseEntity.ok(films);
     }
 
     private FilmDTO convertToDto(Film film) {
@@ -110,12 +129,5 @@ public class FilmController {
         }
 
         return film;
-    }
-
-    @GetMapping("/popular")
-    public List<FilmDTO> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        return filmService.getPopularFilms((int) count).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
     }
 }
