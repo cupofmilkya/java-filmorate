@@ -44,7 +44,7 @@ public class ReferenceDataController {
     @GetMapping("/mpa/{id}")
     public ResponseEntity<MpaDTO> getMpaById(@PathVariable int id) {
         if (id < 1 || id > MpaRating.values().length) {
-            throw new NotFoundException("MPA с id " + id + " не найден");
+            throw new NotFoundException("MPA с id: " + id + " не найден");
         }
         MpaDTO mpa = MpaDTO.fromEnum(MpaRating.values()[id - 1]);
         return ResponseEntity.ok(mpa);
