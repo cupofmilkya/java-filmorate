@@ -3,12 +3,15 @@ package ru.yandex.practicum.filmorate.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.dto.UserDTO;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -16,52 +19,94 @@ import java.util.Set;
 public class UserController {
 
     @Autowired
-    UserService userService;
+    private UserService userService;
 
     @GetMapping
-    public Collection<User> getUsers() {
-        return userService.getUsers();
+    public ResponseEntity<Collection<UserDTO>> getUsers() {
+        Collection<UserDTO> users = userService.getUsers().stream()
+                .map(this::convertToDto)
+                .sorted(Comparator.comparingLong(UserDTO::getId))
+                .toList();
+
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        UserDTO userdto = convertToDto(userService.getUser(id));
+
+        return ResponseEntity.ok(userdto);
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.addUser(user);
+    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO user) {
+        UserDTO userdto = convertToDto(userService.addUser(convertToUser(user)));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(userdto);
     }
 
     @PutMapping
-    public User updateUser(@RequestBody User user) {
-        return userService.updateUser(user);
+    public ResponseEntity<UserDTO> updateUser(@RequestBody UserDTO user) {
+        UserDTO userdto = convertToDto(userService.updateUser(convertToUser(user)));
+
+        return ResponseEntity.ok(userdto);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public User addFriend(
-            @PathVariable long id,
-            @PathVariable long friendId
-    ) {
-        return userService.addFriend(id, friendId);
+    public ResponseEntity<UserDTO> addFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        UserDTO userdto = convertToDto(userService.addFriend(id, friendId));
+
+        return ResponseEntity.ok(userdto);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    @ResponseStatus(HttpStatus.OK)
-    public User deleteFriend(
-            @PathVariable long id,
-            @PathVariable long friendId
-    ) {
-        return userService.deleteFriend(id, friendId);
+    public ResponseEntity<UserDTO> deleteFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        UserDTO userdto = convertToDto(userService.deleteFriend(id, friendId));
+
+        return ResponseEntity.ok(userdto);
     }
 
     @GetMapping("/{id}/friends")
-    public Set<User> getFriends(
-            @PathVariable long id
-    ) {
-        return userService.getFriends(id);
+    public ResponseEntity<Set<UserDTO>> getFriends(@PathVariable Long id) {
+        Set<UserDTO> users = userService.getFriends(id).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toSet());
+
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Set<User> getCommonFriends(
-            @PathVariable long id,
-            @PathVariable long otherId
-    ) {
-        return userService.getCommonFriends(id, otherId);
+    public Set<UserDTO> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+        return userService.getCommonFriends(id, otherId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toSet());
+    }
+
+    private UserDTO convertToDto(User user) {
+        return UserDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .login(user.getLogin())
+                .name(user.getName())
+                .birthday(user.getBirthday())
+                .friendIds(user.getFriends() != null && !user.getFriends().isEmpty()
+                    ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
+                .build();
+    }
+
+    private User convertToUser(UserDTO dto) {
+        User user = new User();
+        user.setId(dto.getId());
+        user.setEmail(dto.getEmail());
+        user.setLogin(dto.getLogin());
+        user.setName(dto.getName());
+        user.setBirthday(dto.getBirthday());
+
+        if (dto.getFriendIds() != null && !dto.getFriendIds().isEmpty()) {
+            dto.getFriendIds().forEach(friendId ->
+                    user.getFriends().put(friendId, FriendshipStatus.CONFIRMED));
+        }
+
+        return user;
     }
 }

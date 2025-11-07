@@ -12,4 +12,8 @@ public interface UserStorage {
     Map<Long, User> getUsers();
 
     void updateUser(long id, User user);
+
+    void addFriend(Long id, Long friendId);
+
+    void deleteFriend(Long id, Long friendId);
 }
