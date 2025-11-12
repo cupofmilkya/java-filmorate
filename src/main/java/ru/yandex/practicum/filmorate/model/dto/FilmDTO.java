@@ -18,4 +18,5 @@ public class FilmDTO {
     private int duration;
     private Set<GenreDTO> genres;
     private MpaDTO mpa;
+    private Set<DirectorDTO> directors;
 }

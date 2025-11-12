@@ -36,13 +36,13 @@ class FilmDbStorageTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("DELETE FROM likes");
-        jdbcTemplate.update("DELETE FROM genre_film");
-        jdbcTemplate.update("DELETE FROM films");
-        jdbcTemplate.update("DELETE FROM user_friendships");
-        jdbcTemplate.update("DELETE FROM users");
-        jdbcTemplate.update("ALTER TABLE films ALTER COLUMN film_id RESTART WITH 1");
-        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
+        jdbcTemplate.update("DEL ETE FROM likes");
+        jdbcTemplate.update("DEL ETE FROM genre_film");
+        jdbcTemplate.update("DEL ETE FROM films");
+        jdbcTemplate.update("DEL ETE FROM user_friendships");
+        jdbcTemplate.update("DEL ETE FROM users");
+        jdbcTemplate.update("ALT ER TABLE films ALTER COLUMN film_id RESTART WITH 1");
+        jdbcTemplate.update("ALT ER TABLE users ALTER COLUMN user_id RESTART WITH 1");
     }
 
     @Test
