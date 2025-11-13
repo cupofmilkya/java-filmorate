@@ -14,7 +14,10 @@ import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
 import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -52,6 +55,11 @@ public class FilmController {
         FilmDTO filmdto = convertToDto(filmService.updateFilm(convertToFilm(filmDTO)));
 
         return ResponseEntity.ok(filmdto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
     }
 
     @PutMapping("/{id}/like/{userId}")

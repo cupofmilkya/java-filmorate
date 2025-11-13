@@ -6,12 +6,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -137,6 +137,14 @@ public class FilmDbStorage implements FilmStorage {
         if (updated == 0) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
         }
+    }
+
+    @Override
+    public void removeFilm(long id) {
+        String sql = "DELETE FROM films " +
+                "WHERE film_id = ?";
+        jdbcTemplate.update(sql,
+                id);
     }
 
     public void sendLike(Long userId, Long filmId) {

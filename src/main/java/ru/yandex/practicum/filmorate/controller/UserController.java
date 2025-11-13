@@ -52,6 +52,11 @@ public class UserController {
         return ResponseEntity.ok(userdto);
     }
 
+    @DeleteMapping("/{id}")
+    public void removeUser(@PathVariable long id) {
+        userService.removeUser(id);
+    }
+
     @PutMapping("/{id}/friends/{friendId}")
     public ResponseEntity<UserDTO> addFriend(@PathVariable Long id, @PathVariable Long friendId) {
         UserDTO userdto = convertToDto(userService.addFriend(id, friendId));
@@ -90,7 +95,7 @@ public class UserController {
                 .name(user.getName())
                 .birthday(user.getBirthday())
                 .friendIds(user.getFriends() != null && !user.getFriends().isEmpty()
-                    ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
+                        ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
                 .build();
     }
 

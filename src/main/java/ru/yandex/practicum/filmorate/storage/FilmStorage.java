@@ -13,7 +13,10 @@ public interface FilmStorage {
 
     void updateFilm(long id, Film film);
 
+    void removeFilm(long id);
+
     void sendLike(Long userId, Long filmId);
 
     void removeLike(Long userId, Long filmId);
+
 }
