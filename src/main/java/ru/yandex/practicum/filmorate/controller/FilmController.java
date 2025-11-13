@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
+import ru.yandex.practicum.filmorate.model.dto.DirectorDTO;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
 import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
@@ -77,6 +78,18 @@ public class FilmController {
         return ResponseEntity.ok(films);
     }
 
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<List<FilmDTO>> getFilmsByDirector(
+            @PathVariable Long directorId,
+            @RequestParam(name = "sortBy", defaultValue = "year") String sortBy
+    ) {
+        List<FilmDTO> films = filmService.getFilmsByDirector(directorId, sortBy).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(films);
+    }
+
     private FilmDTO convertToDto(Film film) {
         return FilmDTO.builder()
                 .id(film.getId())
@@ -89,6 +102,11 @@ public class FilmController {
                         ? film.getGenres().stream()
                         .map(GenreDTO::fromEnum)
                         .sorted(Comparator.comparingInt(GenreDTO::getId))
+                        .collect(Collectors.toCollection(LinkedHashSet::new))
+                        : new LinkedHashSet<>())
+                .directors(film.getDirectorsId() != null && !film.getDirectorsId().isEmpty()
+                        ? film.getDirectorsId().stream()
+                        .map(id -> new DirectorDTO(id, "Director " + id)) // временное решение
                         .collect(Collectors.toCollection(LinkedHashSet::new))
                         : new LinkedHashSet<>())
                 .build();
@@ -126,6 +144,16 @@ public class FilmController {
             film.setGenres(genres);
         } else {
             film.setGenres(Set.of());
+        }
+
+        if (dto.getDirectors() != null && !dto.getDirectors().isEmpty()) {
+            Set<Long> directorIds = dto.getDirectors().stream()
+                    .map(DirectorDTO::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            film.setDirectorsId(directorIds);
+        } else {
+            film.setDirectorsId(Set.of());
         }
 
         return film;

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 @Component
@@ -53,6 +54,11 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public void removeLike(Long userId, Long filmId) {
 
+    }
+
+    @Override
+    public LinkedHashSet<Film> getFilmsByDirector(Long directorId) {
+        return new LinkedHashSet<>();
     }
 
     private long getNextId() {

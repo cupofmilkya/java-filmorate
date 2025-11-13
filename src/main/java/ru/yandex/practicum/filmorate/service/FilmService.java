@@ -14,6 +14,8 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -103,6 +105,30 @@ public class FilmService {
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
                 .toList();
+    }
+
+    public LinkedHashSet<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        LinkedHashSet<Film> films = filmStorage.getFilmsByDirector(directorId);
+
+        if (films.isEmpty()) {
+            throw new NotFoundException("У режиссёра с id=" + directorId + " нет фильмов");
+        }
+
+        return switch (sortBy.toLowerCase()) {
+            case "year" -> films.stream()
+                    .sorted(Comparator.comparing(
+                            (Film f) -> f.getReleaseDate() != null ? f.getReleaseDate() : LocalDate.MIN,
+                            Comparator.naturalOrder()
+                    ))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            case "likes" -> films.stream()
+                    .sorted(Comparator.comparingInt((Film f) -> f.getLikes() != null ? f.getLikes().size() : 0)
+                            .reversed())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            default -> throw new ValidationException("Некорректный параметр sortBy: " + sortBy);
+        };
     }
 
     private void validate(Film film) {
