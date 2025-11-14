@@ -55,6 +55,11 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     }
 
+    @Override
+    public Map<Long, Film> getPopularFilms(Long count, Long genreId, Long year) {
+        return null;
+    }
+
     private long getNextId() {
         return films.keySet().stream()
                 .mapToLong(Long::longValue)

@@ -6,12 +6,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -147,6 +147,65 @@ public class FilmDbStorage implements FilmStorage {
     public void removeLike(Long userId, Long filmId) {
         String sql = "DELETE FROM likes WHERE user_id = ? AND film_id = ?";
         jdbcTemplate.update(sql, userId, filmId);
+    }
+
+    @Override
+    public Map<Long, Film> getPopularFilms(Long count, Long genreId, Long year) {
+        if ((genreId != null) && (year != null)) {
+            return getPopularByGenreAndYear(count, genreId, year);
+        } else if (genreId == null) {
+            return getPopularByYear(count, year);
+        } else {
+            return getPopularByGenre(count, genreId);
+        }
+    }
+
+    private Map<Long, Film> getPopularByYear(Long count, Long year) {
+        String sql = "SELECT f.*, count(*) likkes FROM films f " +
+                "INNER JOIN likes l ON l.film_id = f.film_id " +
+                "INNER JOIN genre_film fg ON f.film_id = fg.film_id " +
+                "WHERE  " +
+                "EXTRACT(YEAR FROM CAST(f.release_date AS date)) = ? " +
+                "GROUP BY f.film_id " +
+                "ORDER BY likkes DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(),
+                year,
+                count);
+        return films.stream().collect(Collectors.toMap(Film::getId, f -> f));
+    }
+
+    private Map<Long, Film> getPopularByGenre(Long count, Long genreId) {
+        String sql = "SELECT f.*, count(*) likkes FROM films f " +
+                "INNER JOIN likes l ON l.film_id = f.film_id " +
+                "INNER JOIN genre_film fg ON f.film_id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "GROUP BY f.film_id " +
+                "ORDER BY likkes DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(),
+                genreId,
+                count);
+        return films.stream().collect(Collectors.toMap(Film::getId, f -> f));
+    }
+
+    private Map<Long, Film> getPopularByGenreAndYear(Long count, Long genreId, Long year) {
+        String sql = "SELECT f.*, count(*) likkes FROM films f " +
+                "INNER JOIN likes l ON l.film_id = f.film_id " +
+                "INNER JOIN genre_film fg ON f.film_id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "AND EXTRACT(YEAR FROM CAST(f.release_date AS date)) = ? " +
+                "GROUP BY f.film_id " +
+                "ORDER BY likkes DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(),
+                genreId,
+                year,
+                count);
+        return films.stream().collect(Collectors.toMap(Film::getId, f -> f));
     }
 
     public Set<Long> getLikes(Long filmId) {

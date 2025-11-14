@@ -49,6 +49,10 @@ public class FilmService {
         return film;
     }
 
+    public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
+        return filmStorage.getPopularFilms(count, genreId, year).values();
+    }
+
     public Film updateFilm(Film film) {
         validate(film);
 

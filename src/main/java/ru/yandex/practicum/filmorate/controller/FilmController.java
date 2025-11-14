@@ -14,7 +14,10 @@ import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
 import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,6 +42,7 @@ public class FilmController {
 
         return ResponseEntity.ok(filmdto);
     }
+
 
     @PostMapping
     public ResponseEntity<FilmDTO> createFilm(@RequestBody FilmDTO filmDTO) {
@@ -69,11 +73,19 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        List<FilmDTO> films = filmService.getPopularFilms((int) count).stream()
-                .map(this::convertToDto)
-                .toList();
-
+    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count,
+                                                         @RequestParam(required = false) Long genreId,
+                                                         @RequestParam(required = false) Long year) {
+        List<FilmDTO> films;
+        if ((genreId == null) && (year == null)) {
+            films = filmService.getPopularFilms((int) count).stream()
+                    .map(this::convertToDto)
+                    .toList();
+        } else {
+            films = filmService.getPopularFilms(count, genreId, year).stream()
+                    .map(this::convertToDto)
+                    .toList();
+        }
         return ResponseEntity.ok(films);
     }
 
