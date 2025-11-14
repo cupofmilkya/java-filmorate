@@ -10,7 +10,7 @@ import jakarta.validation.constraints.*;
 @NoArgsConstructor
 public class ReviewDTO {
 
-    @Null(groups = OnCreate.class,  message = "reviewId не передаём при создании")
+    @Null(groups = OnCreate.class, message = "reviewId не передаём при создании")
     @NotNull(groups = OnUpdate.class, message = "reviewId обязателен при обновлении")
     @Positive(groups = OnUpdate.class, message = "reviewId должен быть > 0")
     private Long reviewId;
@@ -33,6 +33,9 @@ public class ReviewDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer useful;
 
-    public interface OnCreate {}
-    public interface OnUpdate {}
+    public interface OnCreate {
+    }
+
+    public interface OnUpdate {
+    }
 }
