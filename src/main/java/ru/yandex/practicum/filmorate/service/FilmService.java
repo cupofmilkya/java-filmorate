@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -102,6 +103,19 @@ public class FilmService {
         return filmStorage.getFilms().values().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
+                .toList();
+    }
+
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        User user = userStorage.getUser(userId);
+        User friend = userStorage.getUser(friendId);
+
+        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+
+        return filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(userId) && f.getLikes().contains(friendId))
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .toList();
     }
 
