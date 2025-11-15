@@ -107,7 +107,6 @@ public class FilmDbStorage implements FilmStorage {
     private Map<Long, Film> getPopularByYear(Long count, Long year) {
         String sql = "SELECT f.*, count(*) likkes FROM films f " +
                 "INNER JOIN likes l ON l.film_id = f.film_id " +
-                "INNER JOIN genre_film fg ON f.film_id = fg.film_id " +
                 "WHERE  " +
                 "EXTRACT(YEAR FROM CAST(f.release_date AS date)) = ? " +
                 "GROUP BY f.film_id " +
