@@ -99,7 +99,7 @@ public class FilmService {
     }
 
     public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
-        return filmStorage.getPopularFilms(count, genreId, year).values();
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 
     public Collection<Film> getPopularFilms(int count) {
