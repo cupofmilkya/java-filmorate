@@ -55,6 +55,11 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     }
 
+    @Override
+    public void removeFilm(long id) {
+        ;
+    }
+
     private long getNextId() {
         return films.keySet().stream()
                 .mapToLong(Long::longValue)

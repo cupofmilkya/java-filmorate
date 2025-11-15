@@ -60,6 +60,14 @@ public class FilmService {
         log.info("Обновлен фильм с id={}, {}", film.getId(), film);
         return film;
     }
+    public void removeFilm(long id) {
+        if (filmStorage.getFilm(id) == null) {
+            throw new NotFoundException("Фильм с id " + id + " не найден");
+        }
+        filmStorage.removeFilm(id);
+        log.info("Фильм с id = {} удален", id);
+    }
+
 
     public Film sendLike(long id, long userId) {
         Film film = filmStorage.getFilm(id);

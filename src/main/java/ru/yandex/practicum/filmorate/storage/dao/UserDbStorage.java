@@ -84,6 +84,15 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
+    public void removeUser(long id) {
+        //удаляем пользователя из таблицы users
+        String sql = "DELETE  FROM users " +
+                "WHERE user_id = ?";
+        jdbcTemplate.update(sql,
+                id);
+    }
+
+    @Override
     public void addFriend(Long userId, Long friendId) {
         if (userId.equals(friendId)) {
             throw new FriendsAddingException("Пользователь не может добавить себя в друзья");
