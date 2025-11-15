@@ -1,8 +1,10 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.mappers.dto.DirectorDTOMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.dto.DirectorDTO;
 import ru.yandex.practicum.filmorate.service.DirectorService;
@@ -11,14 +13,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/directors")
+@RequiredArgsConstructor
 public class DirectorController {
-    @Autowired
-    private DirectorService directorService;
+    private final DirectorService directorService;
 
     @GetMapping
     public ResponseEntity<List<DirectorDTO>> getDirectors() {
         List<DirectorDTO> directors = directorService.getDirectors().stream()
-                .map(this::convertToDto)
+                .map(DirectorDTOMapper::convertToDto)
                 .toList();
 
         return ResponseEntity.ok(directors);
@@ -26,43 +28,30 @@ public class DirectorController {
 
     @GetMapping("/{id}")
     public ResponseEntity<DirectorDTO> getDirector(@PathVariable Long id) {
-        DirectorDTO directorDTO = convertToDto(directorService.getDirector(id));
+        DirectorDTO directorDTO = DirectorDTOMapper.convertToDto(directorService.getDirector(id));
 
         return ResponseEntity.ok(directorDTO);
     }
 
     @PostMapping()
-    public ResponseEntity<DirectorDTO> addDirector(@RequestBody DirectorDTO director) {
-        DirectorDTO directorDTO = convertToDto(directorService.addDirector(convertToDirector(director)));
+    public ResponseEntity<DirectorDTO> addDirector(@Valid @RequestBody DirectorDTO dto) {
+        DirectorDTO directorDTO =
+                DirectorDTOMapper.convertToDto(directorService.addDirector(DirectorDTOMapper.convertToDirector(dto)));
 
         return ResponseEntity.ok(directorDTO);
     }
 
     @PutMapping()
-    public ResponseEntity<DirectorDTO> updateDirector(@RequestBody DirectorDTO director) {
-        Director directorUpdated = directorService.updateDirector(convertToDirector(director));
+    public ResponseEntity<DirectorDTO> updateDirector(@Valid @RequestBody DirectorDTO director) {
+        Director directorUpdated = directorService.updateDirector(DirectorDTOMapper.convertToDirector(director));
 
-        return ResponseEntity.ok(convertToDto(directorUpdated));
+        return ResponseEntity.ok(DirectorDTOMapper.convertToDto(directorUpdated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<DirectorDTO> deleteDirector(@PathVariable Long id) {
         Director director = directorService.deleteDirector(id);
 
-        return ResponseEntity.ok(convertToDto(director));
-    }
-
-    private DirectorDTO convertToDto(Director director) {
-        return DirectorDTO.builder()
-                .id(director.getId())
-                .name(director.getName())
-                .build();
-    }
-
-    private Director convertToDirector(DirectorDTO dto) {
-        return Director.builder()
-                .id(dto.getId())
-                .name(dto.getName())
-                .build();
+        return ResponseEntity.ok(DirectorDTOMapper.convertToDto(director));
     }
 }
