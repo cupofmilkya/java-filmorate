@@ -69,11 +69,19 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        List<FilmDTO> films = filmService.getPopularFilms((int) count).stream()
-                .map(this::convertToDto)
-                .toList();
-
+    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count,
+                                                         @RequestParam(required = false) Long genreId,
+                                                         @RequestParam(required = false) Long year) {
+        List<FilmDTO> films;
+        if ((genreId == null) && (year == null)) {
+            films = filmService.getPopularFilms((int) count).stream()
+                    .map(this::convertToDto)
+                    .toList();
+        } else {
+            films = filmService.getPopularFilms(count, genreId, year).stream()
+                    .map(this::convertToDto)
+                    .toList();
+        }
         return ResponseEntity.ok(films);
     }
 

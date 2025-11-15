@@ -98,6 +98,10 @@ public class FilmService {
         return film;
     }
 
+    public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
+        return filmStorage.getPopularFilms(count, genreId, year).values();
+    }
+
     public Collection<Film> getPopularFilms(int count) {
         return filmStorage.getFilms().values().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())

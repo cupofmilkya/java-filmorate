@@ -16,4 +16,6 @@ public interface FilmStorage {
     void sendLike(Long userId, Long filmId);
 
     void removeLike(Long userId, Long filmId);
+
+    Map<Long, Film> getPopularFilms(Long count, Long genreId, Long year);
 }
