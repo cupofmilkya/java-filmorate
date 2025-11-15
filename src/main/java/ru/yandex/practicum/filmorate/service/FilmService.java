@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
 
-    private FilmStorage filmStorage;
-    private UserStorage userStorage;
+    private final FilmStorage filmStorage;
+    private final UserStorage userStorage;
 
     public Collection<Film> getFilms() {
         return filmStorage.getFilms().values();
@@ -43,6 +43,8 @@ public class FilmService {
             throw new ValidationException("Фильм с id " + film.getId() + " уже существует");
         }
 
+        validateReleaseDate(film);
+
         filmStorage.addFilm(film);
 
         log.info("Создан фильм {} ", film);
@@ -53,6 +55,8 @@ public class FilmService {
         if (filmStorage.getFilm(film.getId()) == null) {
             throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
         }
+
+        validateReleaseDate(film);
 
         filmStorage.updateFilm(film.getId(), film);
         log.info("Обновлен фильм с id={}, {}", film.getId(), film);
@@ -125,5 +129,17 @@ public class FilmService {
 
             default -> throw new ValidationException("Некорректный параметр sortBy: " + sortBy);
         };
+    }
+
+    private void validateReleaseDate(Film film) {
+        LocalDate barrier = LocalDate.of(1895, 12, 28);
+
+        if (film.getReleaseDate() == null) {
+            throw new ValidationException("Дата релиза не указана");
+        }
+
+        if (film.getReleaseDate().isBefore(barrier)) {
+            throw new ValidationException("Дата релиза не может быть раньше " + barrier);
+        }
     }
 }
