@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -17,10 +16,10 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserStorage userStorage;
+    private final UserStorage userStorage;
 
     public Collection<User> getUsers() {
         return userStorage.getUsers().values();
@@ -36,8 +35,6 @@ public class UserService {
     }
 
     public User addUser(User user) {
-        validate(user);
-
         userStorage.addUser(user);
         log.info("Создан пользователь {}", user);
         return user;
@@ -48,8 +45,6 @@ public class UserService {
             log.warn("Обновление пользователя без указания id");
             throw new ValidationException("ID не указан");
         }
-
-        validate(user);
 
         if (userStorage.getUser(user.getId()) == null) {
             log.warn("Не найден пользователь для обновления с id {}", user.getId());
@@ -141,28 +136,5 @@ public class UserService {
                 .map(userStorage::getUser)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-    }
-
-    private void validate(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Ошибка валидации: email пустой");
-            throw new ValidationException("Email не может быть пустым");
-        }
-        if (!user.getEmail().contains("@")) {
-            log.warn("Ошибка валидации: email {} не содержит @", user.getEmail());
-            throw new ValidationException("Email должен содержать @");
-        }
-        if (user.getLogin() == null || user.getLogin().isBlank()) {
-            log.warn("Ошибка валидации: пустой login");
-            throw new ValidationException("Login не может быть пустым");
-        }
-        if (user.getLogin().contains(" ")) {
-            log.warn("Ошибка валидации: login {} содержит пробелы", user.getLogin());
-            throw new ValidationException("Login не может содержать пробелы");
-        }
-        if (user.getBirthday().isAfter(LocalDate.now())) {
-            log.warn("Ошибка валидации: дата рождения {} в будущем", user.getBirthday());
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
     }
 }
