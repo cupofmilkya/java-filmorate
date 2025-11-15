@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.mappers.FeedEventDtoMapper;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.dto.FeedEventDTO;
 import ru.yandex.practicum.filmorate.model.dto.UserDTO;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -82,6 +84,15 @@ public class UserController {
                 .collect(Collectors.toSet());
     }
 
+    @GetMapping("/{id}/feed")
+    public ResponseEntity<List<FeedEventDTO>> getFeeds(@PathVariable Long id) {
+        List<FeedEventDTO> body = userService.getFeedByUser(id).stream()
+                .map(FeedEventDtoMapper::toDto)
+                .toList();
+        return ResponseEntity.ok(body);
+
+    }
+
     private UserDTO convertToDto(User user) {
         return UserDTO.builder()
                 .id(user.getId())
@@ -90,7 +101,7 @@ public class UserController {
                 .name(user.getName())
                 .birthday(user.getBirthday())
                 .friendIds(user.getFriends() != null && !user.getFriends().isEmpty()
-                    ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
+                        ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
                 .build();
     }
 

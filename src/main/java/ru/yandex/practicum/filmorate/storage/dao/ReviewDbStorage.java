@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.dao;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,30 +20,26 @@ import java.util.Optional;
 
 @Repository
 @Primary
+@RequiredArgsConstructor
 public class ReviewDbStorage implements ReviewStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    public ReviewDbStorage(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
     private static final String SELECT_REVIEW_WITH_USEFUL = """
-        SELECT
-            r.review_id,
-            r.content,
-            r.is_positive,
-            r.user_id,
-            r.film_id,
-            COALESCE(SUM(CASE
-                WHEN v.is_like IS TRUE  THEN  1
-                WHEN v.is_like IS FALSE THEN -1
-                ELSE 0
-            END), 0) AS useful
-        FROM reviews r
-        LEFT JOIN review_votes v ON v.review_id = r.review_id
-        """;
+            SELECT
+                r.review_id,
+                r.content,
+                r.is_positive,
+                r.user_id,
+                r.film_id,
+                COALESCE(SUM(CASE
+                    WHEN v.is_like IS TRUE  THEN  1
+                    WHEN v.is_like IS FALSE THEN -1
+                    ELSE 0
+                END), 0) AS useful
+            FROM reviews r
+            LEFT JOIN review_votes v ON v.review_id = r.review_id
+            """;
 
     private static final String SQL_GET_ONE = SELECT_REVIEW_WITH_USEFUL + """
         WHERE r.review_id = ?

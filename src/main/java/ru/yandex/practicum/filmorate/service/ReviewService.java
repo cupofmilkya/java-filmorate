@@ -4,7 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -20,12 +23,15 @@ public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final FeedStorage feedStorage;
 
     public Review create(Review review) {
         checkUser(review.getUserId());
         checkFilm(review.getFilmId());
 
         reviewStorage.addReview(review);
+        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.ADD, review.getReviewId());
+
         return getById(review.getReviewId());
     }
 
@@ -46,12 +52,15 @@ public class ReviewService {
         review.setFilmId(existing.getFilmId());
 
         reviewStorage.updateReview(review);
+        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.UPDATE, review.getReviewId());
 
         return getById(review.getReviewId());
     }
 
     public void deleteById(long reviewId) {
         checkReview(reviewId);
+        Review review = getById(reviewId);
+        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.REMOVE, review.getReviewId());
         reviewStorage.deleteReview(reviewId);
     }
 
