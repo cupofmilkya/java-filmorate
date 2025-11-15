@@ -95,7 +95,7 @@ public class UserController {
                 .name(user.getName())
                 .birthday(user.getBirthday())
                 .friendIds(user.getFriends() != null && !user.getFriends().isEmpty()
-                    ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
+                        ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
                 .build();
     }
 
