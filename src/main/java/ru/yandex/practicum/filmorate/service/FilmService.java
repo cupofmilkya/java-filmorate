@@ -146,7 +146,6 @@ public class FilmService {
         if (film.getReleaseDate() == null) {
             throw new ValidationException("Дата релиза не указана");
         }
-
         if (film.getReleaseDate().isBefore(barrier)) {
             throw new ValidationException("Дата релиза не может быть раньше " + barrier);
         }
