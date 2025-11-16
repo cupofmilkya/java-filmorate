@@ -87,31 +87,5 @@ public class UserController {
                 .collect(Collectors.toSet());
     }
 
-    private UserDTO convertToDto(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .login(user.getLogin())
-                .name(user.getName())
-                .birthday(user.getBirthday())
-                .friendIds(user.getFriends() != null && !user.getFriends().isEmpty()
-                        ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
-                .build();
-    }
 
-    private User convertToUser(UserDTO dto) {
-        User user = new User();
-        user.setId(dto.getId());
-        user.setEmail(dto.getEmail());
-        user.setLogin(dto.getLogin());
-        user.setName(dto.getName());
-        user.setBirthday(dto.getBirthday());
-
-        if (dto.getFriendIds() != null && !dto.getFriendIds().isEmpty()) {
-            dto.getFriendIds().forEach(friendId ->
-                    user.getFriends().put(friendId, FriendshipStatus.CONFIRMED));
-        }
-
-        return user;
-    }
 }
