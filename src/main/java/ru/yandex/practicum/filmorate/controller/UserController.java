@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.mappers.dto.UserDTOMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
@@ -93,53 +94,8 @@ public class UserController {
     @GetMapping("/{id}/recommendations")
     public ResponseEntity<List<FilmDTO>> getRecommendations(@PathVariable Long id) {
         List<FilmDTO> recommendedFilms = filmService.getRecommendations(id).stream()
-                .map(this::convertToDto)
+                .map(FilmDTOMapper::convertToDto)
                 .toList();
         return ResponseEntity.ok(recommendedFilms);
-    }
-
-    private UserDTO convertToDto(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .login(user.getLogin())
-                .name(user.getName())
-                .birthday(user.getBirthday())
-                .friendIds(user.getFriends() != null && !user.getFriends().isEmpty()
-                    ? new LinkedHashSet<>(user.getFriends().keySet()) : new HashSet<>())
-                .build();
-    }
-
-    private User convertToUser(UserDTO dto) {
-        User user = new User();
-        user.setId(dto.getId());
-        user.setEmail(dto.getEmail());
-        user.setLogin(dto.getLogin());
-        user.setName(dto.getName());
-        user.setBirthday(dto.getBirthday());
-
-        if (dto.getFriendIds() != null && !dto.getFriendIds().isEmpty()) {
-            dto.getFriendIds().forEach(friendId ->
-                    user.getFriends().put(friendId, FriendshipStatus.CONFIRMED));
-        }
-
-        return user;
-    }
-
-    private FilmDTO convertToDto(Film film) {
-        return FilmDTO.builder()
-                .id(film.getId())
-                .name(film.getName())
-                .description(film.getDescription())
-                .releaseDate(film.getReleaseDate())
-                .duration(film.getDuration())
-                .mpa(film.getMpaRating() != null ? MpaDTO.fromEnum(film.getMpaRating()) : null)
-                .genres(film.getGenres() != null && !film.getGenres().isEmpty()
-                        ? film.getGenres().stream()
-                        .map(GenreDTO::fromEnum)
-                        .sorted(Comparator.comparingInt(GenreDTO::getId))
-                        .collect(Collectors.toCollection(LinkedHashSet::new))
-                        : new LinkedHashSet<>())
-                .build();
     }
 }
