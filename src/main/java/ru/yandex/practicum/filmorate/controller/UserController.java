@@ -8,12 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.mappers.dto.UserDTOMapper;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.FriendshipStatus;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
-import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
-import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.model.dto.UserDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -59,6 +54,11 @@ public class UserController {
         UserDTO userdto = UserDTOMapper.convertToDto(userService.updateUser(UserDTOMapper.convertToUser(user)));
 
         return ResponseEntity.ok(userdto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void removeUser(@PathVariable long id) {
+        userService.removeUser(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")

@@ -18,5 +18,7 @@ public interface FilmStorage {
 
     void removeLike(Long userId, Long filmId);
 
+    void removeFilm(long id);
+
     LinkedHashSet<Film> getFilmsByDirector(Long directorId);
 }
