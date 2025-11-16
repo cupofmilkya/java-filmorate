@@ -5,9 +5,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
+import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
+import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.model.dto.UserDTO;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.*;
@@ -20,6 +25,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private FilmService filmService;
 
     @GetMapping
     public ResponseEntity<Collection<UserDTO>> getUsers() {
@@ -82,6 +90,14 @@ public class UserController {
                 .collect(Collectors.toSet());
     }
 
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<List<FilmDTO>> getRecommendations(@PathVariable Long id) {
+        List<FilmDTO> recommendedFilms = filmService.getRecommendations(id).stream()
+                .map(this::convertToDto)
+                .toList();
+        return ResponseEntity.ok(recommendedFilms);
+    }
+
     private UserDTO convertToDto(User user) {
         return UserDTO.builder()
                 .id(user.getId())
@@ -108,5 +124,22 @@ public class UserController {
         }
 
         return user;
+    }
+
+    private FilmDTO convertToDto(Film film) {
+        return FilmDTO.builder()
+                .id(film.getId())
+                .name(film.getName())
+                .description(film.getDescription())
+                .releaseDate(film.getReleaseDate())
+                .duration(film.getDuration())
+                .mpa(film.getMpaRating() != null ? MpaDTO.fromEnum(film.getMpaRating()) : null)
+                .genres(film.getGenres() != null && !film.getGenres().isEmpty()
+                        ? film.getGenres().stream()
+                        .map(GenreDTO::fromEnum)
+                        .sorted(Comparator.comparingInt(GenreDTO::getId))
+                        .collect(Collectors.toCollection(LinkedHashSet::new))
+                        : new LinkedHashSet<>())
+                .build();
     }
 }

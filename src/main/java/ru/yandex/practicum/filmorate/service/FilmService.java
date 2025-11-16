@@ -14,6 +14,9 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -103,6 +106,56 @@ public class FilmService {
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
                 .toList();
+    }
+
+    public List<Film> getRecommendations(long userId) {
+        User user = userStorage.getUser(userId);
+        if (user == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
+
+        User bestMatch = userStorage.getUsers().values().stream()
+                .filter(u -> !u.getId().equals(userId))
+                .max(Comparator.comparingInt(u -> intersectionSize(userId, u.getId())))
+                .orElse(null);
+
+        if (bestMatch == null) {
+            return List.of();
+        }
+
+        Set<Long> userLikes = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(userId))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> bestMatchLikes = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(bestMatch.getId()))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> recommendedIds = bestMatchLikes.stream()
+                .filter(id -> !userLikes.contains(id))
+                .collect(Collectors.toSet());
+
+        return filmStorage.getFilms().values().stream()
+                .filter(f -> recommendedIds.contains(f.getId()))
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+                .toList();
+    }
+
+    private int intersectionSize(long user1, long user2) {
+        Set<Long> likes1 = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(user1))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> likes2 = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(user2))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        likes1.retainAll(likes2);
+        return likes1.size();
     }
 
     private void validate(Film film) {
