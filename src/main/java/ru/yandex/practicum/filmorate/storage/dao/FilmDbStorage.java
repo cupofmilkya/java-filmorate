@@ -49,12 +49,27 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             saveGenres(film.getId(), film.getGenres());
         }
+
+        if (film.getDirectorsId() != null && !film.getDirectorsId().isEmpty()) {
+            System.out.println("=== SAVING DIRECTORS FOR FILM " + film.getId() + ": " + film.getDirectorsId() + " ===");
+            saveDirectors(film.getId(), film.getDirectorsId());
+        } else {
+            System.out.println("=== NO DIRECTORS TO SAVE FOR FILM " + film.getId() + " ===");
+        }
     }
 
     private void saveGenres(Long filmId, Set<Genre> genres) {
         String sql = "INSERT INTO genre_film (film_id, genre_id) VALUES (?, ?)";
         for (Genre genre : genres) {
             jdbcTemplate.update(sql, filmId, genre.ordinal() + 1);
+        }
+    }
+
+    private void saveDirectors(Long filmId, Set<Long> directorIds) {
+        String sql = "INSERT INTO director_film (film_id, director_id) VALUES (?, ?)";
+        for (Long directorId : directorIds) {
+            System.out.println("=== INSERTING DIRECTOR " + directorId + " FOR FILM " + filmId + " ===");
+            jdbcTemplate.update(sql, filmId, directorId);
         }
     }
 
@@ -89,6 +104,10 @@ public class FilmDbStorage implements FilmStorage {
         } else {
             film.setGenres(Set.of());
         }
+
+        String directorsSql = "SELECT director_id FROM director_film WHERE film_id = ?";
+        List<Long> directorIds = jdbcTemplate.queryForList(directorsSql, Long.class, film.getId());
+        film.setDirectorsId(new HashSet<>(directorIds));
 
         return film;
     }
@@ -162,14 +181,12 @@ public class FilmDbStorage implements FilmStorage {
         for (Film f : films) {
             f.setLikes(getLikes(f.getId()));
 
-            // mpa
             Integer mpaId = jdbcTemplate.queryForObject(
                     "SELECT mpa_id FROM films WHERE film_id = ?", Integer.class, f.getId());
             if (mpaId != null && mpaId > 0 && mpaId <= MpaRating.values().length) {
                 f.setMpaRating(MpaRating.values()[mpaId - 1]);
             }
 
-            // genres
             List<Integer> genreIds = jdbcTemplate.queryForList(
                     "SELECT genre_id FROM genre_film WHERE film_id = ?", Integer.class, f.getId());
             if (genreIds != null && !genreIds.isEmpty()) {
@@ -180,6 +197,10 @@ public class FilmDbStorage implements FilmStorage {
             } else {
                 f.setGenres(Set.of());
             }
+
+            List<Long> directorIds = jdbcTemplate.queryForList(
+                    "SELECT director_id FROM director_film WHERE film_id = ?", Long.class, f.getId());
+            f.setDirectorsId(new HashSet<>(directorIds));
         }
         return films.stream().collect(Collectors.toMap(Film::getId, f -> f));
     }
@@ -197,6 +218,16 @@ public class FilmDbStorage implements FilmStorage {
         );
         if (updated == 0) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
+        }
+
+        String deleteSql = "DELETE FROM director_film WHERE film_id = ?";
+        jdbcTemplate.update(deleteSql, id);
+
+        if (film.getDirectorsId() != null && !film.getDirectorsId().isEmpty()) {
+            String insertSql = "INSERT INTO director_film (director_id, film_id) VALUES (?, ?)";
+            for (Long directorId : film.getDirectorsId()) {
+                jdbcTemplate.update(insertSql, directorId, id);
+            }
         }
     }
 
@@ -218,5 +249,39 @@ public class FilmDbStorage implements FilmStorage {
     private boolean hasLike(Long filmId, Long userId) {
         String sql = "SELECT COUNT(*) FROM likes WHERE film_id = ? AND user_id = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, filmId, userId) > 0;
+    }
+
+    public LinkedHashSet<Film> getFilmsByDirector(Long directorId) {
+        String sql = "SELECT f.* FROM films AS f JOIN director_film AS df ON f.film_id = df.film_id " +
+                "WHERE df.director_id = ?";
+
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), directorId);
+
+        for (Film film : films) {
+            film.setLikes(getLikes(film.getId()));
+
+            Integer mpaId = jdbcTemplate.queryForObject(
+                    "SELECT mpa_id FROM films WHERE film_id = ?", Integer.class, film.getId());
+            if (mpaId != null && mpaId > 0 && mpaId <= MpaRating.values().length) {
+                film.setMpaRating(MpaRating.values()[mpaId - 1]);
+            }
+
+            List<Integer> genreIds = jdbcTemplate.queryForList(
+                    "SELECT genre_id FROM genre_film WHERE film_id = ?", Integer.class, film.getId());
+            if (genreIds != null && !genreIds.isEmpty()) {
+                Set<Genre> genres = genreIds.stream()
+                        .map(idVal -> Genre.values()[idVal - 1])
+                        .collect(Collectors.toSet());
+                film.setGenres(genres);
+            } else {
+                film.setGenres(Set.of());
+            }
+
+            List<Long> directorIds = jdbcTemplate.queryForList(
+                    "SELECT director_id FROM director_film WHERE film_id = ?", Long.class, film.getId());
+            film.setDirectorsId(new HashSet<>(directorIds));
+        }
+
+        return new LinkedHashSet<>(films);
     }
 }

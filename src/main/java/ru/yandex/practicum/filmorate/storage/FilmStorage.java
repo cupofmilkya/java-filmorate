@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 public interface FilmStorage {
@@ -19,4 +20,5 @@ public interface FilmStorage {
     void removeLike(Long userId, Long filmId);
 
     Collection<Film> getPopularFilms(Long count, Long genreId, Long year);
+    LinkedHashSet<Film> getFilmsByDirector(Long directorId);
 }

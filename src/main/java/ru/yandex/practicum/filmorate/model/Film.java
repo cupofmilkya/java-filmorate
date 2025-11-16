@@ -21,6 +21,7 @@ public class Film {
     private Set<Long> likes;
     private Set<Genre> genres;
     private MpaRating mpaRating;
+    private Set<Long> directorsId;
 
     public Film() {
         likes = new HashSet<>();

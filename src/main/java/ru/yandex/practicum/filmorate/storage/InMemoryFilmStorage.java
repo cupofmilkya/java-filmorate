@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 @Component
@@ -59,6 +60,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
         return null;
+    public LinkedHashSet<Film> getFilmsByDirector(Long directorId) {
+        return new LinkedHashSet<>();
     }
 
     private long getNextId() {
