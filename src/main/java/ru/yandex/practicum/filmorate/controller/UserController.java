@@ -90,6 +90,5 @@ public class UserController {
                 .map(FeedEventDtoMapper::toDto)
                 .toList();
         return ResponseEntity.ok(body);
-
     }
 }
