@@ -9,7 +9,7 @@ import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -47,6 +47,11 @@ public class FilmController {
         FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.updateFilm(FilmDTOMapper.convertToFilm(filmDTO)));
 
         return ResponseEntity.ok(filmdto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
     }
 
     @PutMapping("/{id}/like/{userId}")
