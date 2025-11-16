@@ -60,6 +60,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
         return null;
+    }
+
     public LinkedHashSet<Film> getFilmsByDirector(Long directorId) {
         return new LinkedHashSet<>();
     }

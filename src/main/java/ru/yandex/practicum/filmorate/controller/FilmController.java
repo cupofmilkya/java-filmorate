@@ -9,7 +9,7 @@ import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -70,11 +70,11 @@ public class FilmController {
         List<FilmDTO> films;
         if ((genreId == null) && (year == null)) {
             films = filmService.getPopularFilms((int) count).stream()
-                    .map(this::convertToDto)
+                    .map(FilmDTOMapper::convertToDto)
                     .toList();
         } else {
             films = filmService.getPopularFilms(count, genreId, year).stream()
-                    .map(this::convertToDto)
+                    .map(FilmDTOMapper::convertToDto)
                     .toList();
         }
         return ResponseEntity.ok(films);
