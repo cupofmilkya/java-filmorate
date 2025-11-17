@@ -25,6 +25,6 @@ public interface FilmStorage {
 
     Collection<Film> getPopularByGenre(Long count, Long genreId);
 
-    Collection<Film> getPopularByGenreAndYear(Long count, Long genreId, Long year)
+    Collection<Film> getPopularByGenreAndYear(Long count, Long genreId, Long year);
 
 }
