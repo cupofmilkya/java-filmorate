@@ -9,7 +9,7 @@ import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -49,6 +49,11 @@ public class FilmController {
         return ResponseEntity.ok(filmdto);
     }
 
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
+    }
+
     @PutMapping("/{id}/like/{userId}")
     public ResponseEntity<FilmDTO> addLike(@PathVariable long id, @PathVariable long userId) {
         FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.sendLike(id, userId));
@@ -80,6 +85,30 @@ public class FilmController {
         List<FilmDTO> films = filmService.getFilmsByDirector(directorId, sortBy).stream()
                 .map(FilmDTOMapper::convertToDto)
                 .collect(Collectors.toList());
+
+        return ResponseEntity.ok(films);
+    }
+
+    @GetMapping("/common")
+    public ResponseEntity<List<FilmDTO>> getCommonFilms(
+            @RequestParam long userId,
+            @RequestParam long friendId) {
+
+        List<FilmDTO> films = filmService.getCommonFilms(userId, friendId).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
+
+        return ResponseEntity.ok(films);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<FilmDTO>> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by) {
+
+        List<FilmDTO> films = filmService.searchFilms(query, by).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
 
         return ResponseEntity.ok(films);
     }
