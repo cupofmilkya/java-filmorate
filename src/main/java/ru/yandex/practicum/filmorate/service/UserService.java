@@ -56,6 +56,15 @@ public class UserService {
         return user;
     }
 
+    public void removeUser(long id) {
+        if (userStorage.getUser(id) == null) {
+            log.warn("Попытка удалить пользователя: не найден пользователь c id = {}", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
+        userStorage.removeUser(id);
+        log.info("Пользователь с id = {} удален", id);
+    }
+
     public User addFriend(Long id, Long friendId) {
         User user = userStorage.getUser(id);
         User friend = userStorage.getUser(friendId);

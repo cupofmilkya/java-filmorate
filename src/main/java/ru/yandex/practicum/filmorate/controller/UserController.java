@@ -52,6 +52,11 @@ public class UserController {
         return ResponseEntity.ok(userdto);
     }
 
+    @DeleteMapping("/{id}")
+    public void removeUser(@PathVariable long id) {
+        userService.removeUser(id);
+    }
+
     @PutMapping("/{id}/friends/{friendId}")
     public ResponseEntity<UserDTO> addFriend(@PathVariable Long id, @PathVariable Long friendId) {
         UserDTO userdto = UserDTOMapper.convertToDto(userService.addFriend(id, friendId));
@@ -81,4 +86,6 @@ public class UserController {
                 .map(UserDTOMapper::convertToDto)
                 .collect(Collectors.toSet());
     }
+
+
 }

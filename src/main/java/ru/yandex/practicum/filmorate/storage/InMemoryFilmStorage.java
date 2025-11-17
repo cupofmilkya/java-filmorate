@@ -54,6 +54,11 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     }
 
+    @Override
+    public void removeFilm(long id) {
+        ;
+    }
+
     public LinkedHashSet<Film> getFilmsByDirector(Long directorId) {
         return new LinkedHashSet<>();
     }
