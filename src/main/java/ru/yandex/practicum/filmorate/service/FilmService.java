@@ -63,6 +63,15 @@ public class FilmService {
         return film;
     }
 
+    public void removeFilm(long id) {
+        if (filmStorage.getFilm(id) == null) {
+            throw new NotFoundException("Фильм с id " + id + " не найден");
+        }
+        filmStorage.removeFilm(id);
+        log.info("Фильм с id = {} удален", id);
+    }
+
+
     public Film sendLike(long id, long userId) {
         Film film = filmStorage.getFilm(id);
         User user = userStorage.getUser(userId);
@@ -147,7 +156,6 @@ public class FilmService {
         if (film.getReleaseDate() == null) {
             throw new ValidationException("Дата релиза не указана");
         }
-
         if (film.getReleaseDate().isBefore(barrier)) {
             throw new ValidationException("Дата релиза не может быть раньше " + barrier);
         }

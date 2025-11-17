@@ -8,9 +8,9 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.sql.Date;
@@ -81,6 +81,15 @@ public class UserDbStorage implements UserStorage {
         if (updated == 0) {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
+    }
+
+    @Override
+    public void removeUser(long id) {
+        //удаляем пользователя из таблицы users
+        String sql = "DELETE  FROM users " +
+                "WHERE user_id = ?";
+        jdbcTemplate.update(sql,
+                id);
     }
 
     @Override

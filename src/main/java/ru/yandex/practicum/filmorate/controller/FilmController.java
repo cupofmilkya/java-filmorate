@@ -49,6 +49,11 @@ public class FilmController {
         return ResponseEntity.ok(filmdto);
     }
 
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
+    }
+
     @PutMapping("/{id}/like/{userId}")
     public ResponseEntity<FilmDTO> addLike(@PathVariable long id, @PathVariable long userId) {
         FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.sendLike(id, userId));
