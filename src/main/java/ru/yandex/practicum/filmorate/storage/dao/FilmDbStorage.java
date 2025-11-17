@@ -110,7 +110,7 @@ public class FilmDbStorage implements FilmStorage {
 
     public List<Film> searchFilms(String query, String by) {
         StringBuilder sql = new StringBuilder(
-                "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
+                "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, " +
                         "COUNT(DISTINCT l.user_id) as like_count " +
                         "FROM films f " + "LEFT JOIN director_film df ON f.film_id = df.film_id " +
                         "LEFT JOIN directors d ON df.director_id = d.director_id " +
