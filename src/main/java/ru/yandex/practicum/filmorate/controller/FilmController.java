@@ -88,4 +88,16 @@ public class FilmController {
 
         return ResponseEntity.ok(films);
     }
+
+    @GetMapping("/common")
+    public ResponseEntity<List<FilmDTO>> getCommonFilms(
+            @RequestParam long userId,
+            @RequestParam long friendId) {
+
+        List<FilmDTO> films = filmService.getCommonFilms(userId, friendId).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
+
+        return ResponseEntity.ok(films);
+    }
 }
