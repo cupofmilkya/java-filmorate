@@ -154,6 +154,33 @@ public class FilmService {
         };
     }
 
+    public List<Film> searchFilms(String query, String by) {
+
+        if (query == null || query.isBlank()) {
+            log.warn("Попытка поиска с пустым запросом");
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+
+        if (by == null || by.isBlank()) {
+            log.warn("Не указан критерий поиска");
+            throw new ValidationException("Критерий поиска не может быть пустым");
+        }
+
+        String[] criteria = by.split(",");
+        for (String criterion : criteria) {
+            String trimmed = criterion.trim();
+            if (!trimmed.equals("title") && !trimmed.equals("director")) {
+                log.warn("Неверный критерий поиска: {}", trimmed);
+                throw new ValidationException(
+                        "Неверный критерий поиска: " + trimmed + ". Допустимы только: title, director"
+                );
+            }
+        }
+
+        log.info("Поиск фильмов: query='{}', by='{}'", query, by);
+        return filmStorage.searchFilms(query, by);
+    }
+
     private void validateReleaseDate(Film film) {
         LocalDate barrier = LocalDate.of(1895, 12, 28);
 

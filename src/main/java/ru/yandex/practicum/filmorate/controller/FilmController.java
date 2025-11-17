@@ -100,4 +100,16 @@ public class FilmController {
 
         return ResponseEntity.ok(films);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<FilmDTO>> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by) {
+
+        List<FilmDTO> films = filmService.searchFilms(query, by).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
+
+        return ResponseEntity.ok(films);
+    }
 }
