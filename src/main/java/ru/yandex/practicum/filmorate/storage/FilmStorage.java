@@ -19,7 +19,12 @@ public interface FilmStorage {
 
     void removeLike(Long userId, Long filmId);
 
-    Collection<Film> getPopularFilms(Long count, Long genreId, Long year);
-
     LinkedHashSet<Film> getFilmsByDirector(Long directorId);
+
+    Collection<Film> getPopularByYear(Long count, Long year);
+
+    Collection<Film> getPopularByGenre(Long count, Long genreId);
+
+    Collection<Film> getPopularByGenreAndYear(Long count, Long genreId, Long year)
+
 }

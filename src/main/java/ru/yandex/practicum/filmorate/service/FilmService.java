@@ -101,7 +101,13 @@ public class FilmService {
     }
 
     public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
-        return filmStorage.getPopularFilms(count, genreId, year);
+        if ((genreId != null) && (year != null)) {
+            return filmStorage.getPopularByGenreAndYear(count, genreId, year);
+        } else if (genreId == null) {
+            return filmStorage.getPopularByYear(count, year);
+        } else {
+            return filmStorage.getPopularByGenre(count, genreId);
+        }
     }
 
     public Collection<Film> getPopularFilms(int count) {
