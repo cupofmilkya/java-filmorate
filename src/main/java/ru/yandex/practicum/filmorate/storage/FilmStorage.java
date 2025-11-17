@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 public interface FilmStorage {
@@ -21,4 +22,6 @@ public interface FilmStorage {
     void removeFilm(long id);
 
     LinkedHashSet<Film> getFilmsByDirector(Long directorId);
+
+    List<Film> searchFilms(String query, String by);
 }
