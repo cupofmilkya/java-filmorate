@@ -6,8 +6,11 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.LikesSendingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -24,6 +27,7 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final FeedStorage feedStorage;
 
     public Collection<Film> getFilms() {
         return filmStorage.getFilms().values();
@@ -86,7 +90,7 @@ public class FilmService {
         filmStorage.sendLike(userId, id);
 
         film.addLike(userId);
-
+        feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
         log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
         return film;
     }
@@ -104,15 +108,38 @@ public class FilmService {
 
         filmStorage.removeLike(userId, id);
         film.removeLike(userId);
-
+        feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
         return film;
+    }
+
+    public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
+        if ((genreId != null) && (year != null)) {
+            return filmStorage.getPopularByGenreAndYear(count, genreId, year);
+        } else if (genreId == null) {
+            return filmStorage.getPopularByYear(count, year);
+        } else {
+            return filmStorage.getPopularByGenre(count, genreId);
+        }
     }
 
     public Collection<Film> getPopularFilms(int count) {
         return filmStorage.getFilms().values().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
+                .toList();
+    }
+
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        User user = userStorage.getUser(userId);
+        User friend = userStorage.getUser(friendId);
+
+        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+
+        return filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(userId) && f.getLikes().contains(friendId))
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .toList();
     }
 
@@ -188,6 +215,33 @@ public class FilmService {
 
             default -> throw new ValidationException("Некорректный параметр sortBy: " + sortBy);
         };
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+
+        if (query == null || query.isBlank()) {
+            log.warn("Попытка поиска с пустым запросом");
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+
+        if (by == null || by.isBlank()) {
+            log.warn("Не указан критерий поиска");
+            throw new ValidationException("Критерий поиска не может быть пустым");
+        }
+
+        String[] criteria = by.split(",");
+        for (String criterion : criteria) {
+            String trimmed = criterion.trim();
+            if (!trimmed.equals("title") && !trimmed.equals("director")) {
+                log.warn("Неверный критерий поиска: {}", trimmed);
+                throw new ValidationException(
+                        "Неверный критерий поиска: " + trimmed + ". Допустимы только: title, director"
+                );
+            }
+        }
+
+        log.info("Поиск фильмов: query='{}', by='{}'", query, by);
+        return filmStorage.searchFilms(query, by);
     }
 
     private void validateReleaseDate(Film film) {

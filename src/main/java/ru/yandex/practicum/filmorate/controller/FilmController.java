@@ -69,11 +69,19 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        List<FilmDTO> films = filmService.getPopularFilms((int) count).stream()
-                .map(FilmDTOMapper::convertToDto)
-                .toList();
-
+    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count,
+                                                         @RequestParam(required = false) Long genreId,
+                                                         @RequestParam(required = false) Long year) {
+        List<FilmDTO> films;
+        if ((genreId == null) && (year == null)) {
+            films = filmService.getPopularFilms((int) count).stream()
+                    .map(FilmDTOMapper::convertToDto)
+                    .toList();
+        } else {
+            films = filmService.getPopularFilms(count, genreId, year).stream()
+                    .map(FilmDTOMapper::convertToDto)
+                    .toList();
+        }
         return ResponseEntity.ok(films);
     }
 
@@ -85,6 +93,30 @@ public class FilmController {
         List<FilmDTO> films = filmService.getFilmsByDirector(directorId, sortBy).stream()
                 .map(FilmDTOMapper::convertToDto)
                 .collect(Collectors.toList());
+
+        return ResponseEntity.ok(films);
+    }
+
+    @GetMapping("/common")
+    public ResponseEntity<List<FilmDTO>> getCommonFilms(
+            @RequestParam long userId,
+            @RequestParam long friendId) {
+
+        List<FilmDTO> films = filmService.getCommonFilms(userId, friendId).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
+
+        return ResponseEntity.ok(films);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<FilmDTO>> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by) {
+
+        List<FilmDTO> films = filmService.searchFilms(query, by).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
 
         return ResponseEntity.ok(films);
     }
