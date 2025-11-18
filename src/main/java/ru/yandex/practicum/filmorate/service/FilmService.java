@@ -110,6 +110,16 @@ public class FilmService {
         return film;
     }
 
+    public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
+        if ((genreId != null) && (year != null)) {
+            return filmStorage.getPopularByGenreAndYear(count, genreId, year);
+        } else if (genreId == null) {
+            return filmStorage.getPopularByYear(count, year);
+        } else {
+            return filmStorage.getPopularByGenre(count, genreId);
+        }
+    }
+
     public Collection<Film> getPopularFilms(int count) {
         return filmStorage.getFilms().values().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
