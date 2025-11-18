@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -126,6 +127,19 @@ public class FilmService {
                 .toList();
     }
 
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        User user = userStorage.getUser(userId);
+        User friend = userStorage.getUser(friendId);
+
+        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+
+        return filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(userId) && f.getLikes().contains(friendId))
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+                .toList();
+    }
+
     public LinkedHashSet<Film> getFilmsByDirector(Long directorId, String sortBy) {
         LinkedHashSet<Film> films = filmStorage.getFilmsByDirector(directorId);
 
@@ -148,6 +162,33 @@ public class FilmService {
 
             default -> throw new ValidationException("Некорректный параметр sortBy: " + sortBy);
         };
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+
+        if (query == null || query.isBlank()) {
+            log.warn("Попытка поиска с пустым запросом");
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+
+        if (by == null || by.isBlank()) {
+            log.warn("Не указан критерий поиска");
+            throw new ValidationException("Критерий поиска не может быть пустым");
+        }
+
+        String[] criteria = by.split(",");
+        for (String criterion : criteria) {
+            String trimmed = criterion.trim();
+            if (!trimmed.equals("title") && !trimmed.equals("director")) {
+                log.warn("Неверный критерий поиска: {}", trimmed);
+                throw new ValidationException(
+                        "Неверный критерий поиска: " + trimmed + ". Допустимы только: title, director"
+                );
+            }
+        }
+
+        log.info("Поиск фильмов: query='{}', by='{}'", query, by);
+        return filmStorage.searchFilms(query, by);
     }
 
     private void validateReleaseDate(Film film) {

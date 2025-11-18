@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 public interface FilmStorage {
@@ -29,4 +30,5 @@ public interface FilmStorage {
 
     Collection<Film> getPopularByGenreAndYear(Long count, Long genreId, Long year);
 
+    List<Film> searchFilms(String query, String by);
 }
