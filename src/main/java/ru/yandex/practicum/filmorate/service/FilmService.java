@@ -6,8 +6,11 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.LikesSendingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -25,6 +28,7 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final FeedStorage feedStorage;
 
     public Collection<Film> getFilms() {
         return filmStorage.getFilms().values();
@@ -87,7 +91,7 @@ public class FilmService {
         filmStorage.sendLike(userId, id);
 
         film.addLike(userId);
-
+        feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
         log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
         return film;
     }
@@ -105,7 +109,7 @@ public class FilmService {
 
         filmStorage.removeLike(userId, id);
         film.removeLike(userId);
-
+        feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
         return film;
     }

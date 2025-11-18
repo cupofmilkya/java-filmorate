@@ -6,7 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.mappers.FeedEventDtoMapper;
 import ru.yandex.practicum.filmorate.mappers.dto.UserDTOMapper;
+import ru.yandex.practicum.filmorate.model.dto.FeedEventDTO;
 import ru.yandex.practicum.filmorate.model.dto.UserDTO;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -87,5 +89,11 @@ public class UserController {
                 .collect(Collectors.toSet());
     }
 
-
+    @GetMapping("/{id}/feed")
+    public ResponseEntity<List<FeedEventDTO>> getFeeds(@PathVariable Long id) {
+        List<FeedEventDTO> body = userService.getFeedByUser(id).stream()
+                .map(FeedEventDtoMapper::toDto)
+                .toList();
+        return ResponseEntity.ok(body);
+    }
 }

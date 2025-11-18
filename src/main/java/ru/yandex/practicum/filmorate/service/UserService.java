@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final FeedStorage feedStorage;
 
     public Collection<User> getUsers() {
         return userStorage.getUsers().values();
@@ -83,6 +86,7 @@ public class UserService {
         }
 
         userStorage.addFriend(id, friendId);
+        feedStorage.saveEvent(id, EventType.FRIEND, Operation.ADD, friendId);
         log.info("Пользователь {} добавил в друзья {}", id, friendId);
         return userStorage.getUser(id);
     }
@@ -105,6 +109,7 @@ public class UserService {
         }
 
         userStorage.deleteFriend(id, friendId);
+        feedStorage.saveEvent(id, EventType.FRIEND, Operation.REMOVE, friendId);
         log.info("Пользователь {} удалил из друзей {}", id, friendId);
         return userStorage.getUser(id);
     }
@@ -145,5 +150,9 @@ public class UserService {
                 .map(userStorage::getUser)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    public List<FeedEvent> getFeedByUser(Long userId) {
+        return feedStorage.getEventsByUser(userId);
     }
 }
