@@ -7,9 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.mappers.FeedEventDtoMapper;
+import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.mappers.dto.UserDTOMapper;
 import ru.yandex.practicum.filmorate.model.dto.FeedEventDTO;
+import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.model.dto.UserDTO;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.*;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final FilmService filmService;
 
     @GetMapping
     public ResponseEntity<Collection<UserDTO>> getUsers() {
@@ -95,5 +99,13 @@ public class UserController {
                 .map(FeedEventDtoMapper::toDto)
                 .toList();
         return ResponseEntity.ok(body);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<List<FilmDTO>> getRecommendations(@PathVariable Long id) {
+        List<FilmDTO> recommendedFilms = filmService.getRecommendations(id).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
+        return ResponseEntity.ok(recommendedFilms);
     }
 }
