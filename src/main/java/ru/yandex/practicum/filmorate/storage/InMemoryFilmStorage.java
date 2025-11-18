@@ -4,10 +4,6 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.*;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
@@ -80,6 +76,9 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getPopularByGenreAndYear(Long count, Long genreId, Long year) {
+        return List.of();
+    }
+
     public List<Film> searchFilms(String query, String by) {
         return List.of();
     }
