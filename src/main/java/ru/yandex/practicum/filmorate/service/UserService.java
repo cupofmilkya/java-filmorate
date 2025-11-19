@@ -116,20 +116,18 @@ public class UserService {
         return userStorage.getUser(id);
     }
 
-    public Set<User> getFriends(Long id) {
+    public List<User> getFriends(Long id) {
         User user = userStorage.getUser(id);
+
         if (user == null) {
             log.warn("Попытка получить список друзей несуществующего пользователя {}", id);
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
 
-        return user.getFriends().keySet().stream()
-                .map(userStorage::getUser)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return userStorage.getFriends(id);
     }
 
-    public Set<User> getCommonFriends(Long id, Long otherId) {
+    public List<User> getCommonFriends(Long id, Long otherId) {
         User user = userStorage.getUser(id);
         User other = userStorage.getUser(otherId);
 
@@ -148,10 +146,7 @@ public class UserService {
 
         log.info("Общие друзья {} и {}: {}", id, otherId, commonIds);
 
-        return commonIds.stream()
-                .map(userStorage::getUser)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return userStorage.getCommonFriends(id, otherId);
     }
 
     public List<FeedEvent> getFeedByUser(Long userId) {
