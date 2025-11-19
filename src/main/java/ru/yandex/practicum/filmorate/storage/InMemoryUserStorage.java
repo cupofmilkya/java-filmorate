@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -60,12 +61,20 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void deleteFriend(Long id, Long friendId) {
+    public List<User> getFriends(Long userId) {
+        return List.of();
+    }
 
+    @Override
+    public List<User> getCommonFriends(Long userId, Long otherId) {
+        return List.of();
+    }
+
+    @Override
+    public void deleteFriend(Long id, Long friendId) {
     }
 
     @Override
     public void removeUser(long id) {
-        ;
     }
 }

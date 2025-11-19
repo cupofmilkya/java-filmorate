@@ -78,19 +78,19 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public ResponseEntity<Set<UserDTO>> getFriends(@PathVariable Long id) {
-        Set<UserDTO> users = userService.getFriends(id).stream()
+    public ResponseEntity<List<UserDTO>> getFriends(@PathVariable Long id) {
+        List<UserDTO> users = userService.getFriends(id).stream()
                 .map(UserDTOMapper::convertToDto)
-                .collect(Collectors.toSet());
-
+                .toList();
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Set<UserDTO> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
-        return userService.getCommonFriends(id, otherId).stream()
+    public ResponseEntity<List<UserDTO>> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+        List<UserDTO> users = userService.getCommonFriends(id, otherId).stream()
                 .map(UserDTOMapper::convertToDto)
-                .collect(Collectors.toSet());
+                .toList();
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}/feed")
