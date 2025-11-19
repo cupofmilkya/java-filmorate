@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Operation;
@@ -28,16 +29,20 @@ public class ReviewService {
     public Review create(Review review) {
         checkUser(review.getUserId());
         checkFilm(review.getFilmId());
+        review.setUseful(0);
 
-        reviewStorage.addReview(review);
-        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.ADD, review.getReviewId());
-
-        return getById(review.getReviewId());
+        Review saved = reviewStorage.addReview(review);
+        feedStorage.saveEvent(saved.getUserId(), EventType.REVIEW, Operation.ADD, saved.getFilmId());
+        return saved;
     }
 
     public Review getById(long reviewId) {
         checkReview(reviewId);
         return reviewStorage.getReview(reviewId).get();
+    }
+
+    public List<Review> getAll(int count) {
+        return reviewStorage.getReviewsByUseful(count);
     }
 
     public List<Review> getReviewsByFilm(Long filmId, int count) {
@@ -46,22 +51,25 @@ public class ReviewService {
     }
 
     public Review update(Review review) {
-        Review existing = getById(review.getReviewId());
+        if (getById(review.getReviewId()) == null) {
+            throw new NotFoundException("Review c id %d не найден!".formatted(review.getReviewId()));
+        }
 
+        Review existing = getById(review.getReviewId());
         review.setUserId(existing.getUserId());
         review.setFilmId(existing.getFilmId());
 
-        reviewStorage.updateReview(review);
-        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.UPDATE, review.getReviewId());
+        Review updated = reviewStorage.updateReview(review);
+        feedStorage.saveEvent(updated.getUserId(), EventType.REVIEW, Operation.UPDATE, updated.getFilmId());
 
-        return getById(review.getReviewId());
+        return updated;
     }
 
     public void deleteById(long reviewId) {
         checkReview(reviewId);
-        Review review = getById(reviewId);
-        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.REMOVE, review.getReviewId());
+        Review existing = reviewStorage.getReview(reviewId).get();
         reviewStorage.deleteReview(reviewId);
+        feedStorage.saveEvent(existing.getUserId(), EventType.REVIEW, Operation.REMOVE, existing.getFilmId());
     }
 
     public Review putLike(long reviewId, long userId) {

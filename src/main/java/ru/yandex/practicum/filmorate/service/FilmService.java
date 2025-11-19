@@ -87,10 +87,12 @@ public class FilmService {
             throw new LikesSendingException("Пользователь с id " + userId + " уже добавил лайк фильму с id " + id);
         }
 
-        filmStorage.sendLike(userId, id);
+        if (filmStorage.addLike(id, userId)) {
+            feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
+        }
 
         film.addLike(userId);
-        feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
+
         log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
         return film;
     }
@@ -106,9 +108,11 @@ public class FilmService {
             throw new LikesSendingException("Пользователь с id " + userId + " не добавлял лайк фильму с id " + id);
         }
 
-        filmStorage.removeLike(userId, id);
+        if (filmStorage.removeLike(id, userId)) {
+            feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
+        }
         film.removeLike(userId);
-        feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
+
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
         return film;
     }

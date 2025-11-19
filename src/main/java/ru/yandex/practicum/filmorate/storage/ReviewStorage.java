@@ -7,13 +7,15 @@ import java.util.Optional;
 
 public interface ReviewStorage {
 
-    void addReview(Review review);
+    Review addReview(Review review);
 
     Optional<Review> getReview(Long reviewId);
 
     List<Review> getReviewsByFilm(Long filmId, int count);
 
-    void updateReview(Review review);
+    List<Review> getReviewsByUseful(int limit);
+
+    Review updateReview(Review review);
 
     void deleteReview(Long reviewId);
 
