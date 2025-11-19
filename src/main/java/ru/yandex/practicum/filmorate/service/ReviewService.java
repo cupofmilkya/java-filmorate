@@ -30,9 +30,9 @@ public class ReviewService {
         checkUser(review.getUserId());
         checkFilm(review.getFilmId());
         review.setUseful(0);
-        Review saved = reviewStorage.addReview(review);
-        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.ADD, review.getReviewId());
 
+        Review saved = reviewStorage.addReview(review);
+        feedStorage.saveEvent(saved.getUserId(), EventType.REVIEW, Operation.ADD, saved.getReviewId());
         return saved;
     }
 

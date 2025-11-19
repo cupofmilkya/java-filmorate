@@ -243,21 +243,22 @@ public class FilmDbStorage implements FilmStorage {
 
     public boolean addLike(long filmId, long userId) {
         Integer exists = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM film_likes WHERE film_id=? AND user_id=?",
+                "SELECT COUNT(*) FROM likes WHERE film_id = ? AND user_id = ?",
                 Integer.class, filmId, userId
         );
         if (exists != null && exists > 0) {
-            return false; // ничего не меняем -> событие НЕ пишем
+            return false;
         }
-        jdbcTemplate.update("INSERT INTO film_likes(film_id, user_id) VALUES (?, ?)", filmId, userId);
+        jdbcTemplate.update("INSERT INTO likes(film_id, user_id) VALUES (?, ?)", filmId, userId);
         return true;
     }
 
     public boolean removeLike(long filmId, long userId) {
         int rows = jdbcTemplate.update(
-                "DELETE FROM film_likes WHERE film_id=? AND user_id=?", filmId, userId
+                "DELETE FROM likes WHERE film_id = ? AND user_id = ?",
+                filmId, userId
         );
-        return rows > 0;
+        return rows > 0; // событие пишем только если реально удалили
     }
 
     public Set<Long> getLikes(Long filmId) {

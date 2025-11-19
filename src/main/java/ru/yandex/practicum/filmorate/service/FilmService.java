@@ -15,10 +15,10 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -56,16 +56,25 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
-        validate(film);
-
         if (filmStorage.getFilm(film.getId()) == null) {
             throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
         }
+
+        validateReleaseDate(film);
 
         filmStorage.updateFilm(film.getId(), film);
         log.info("Обновлен фильм с id={}, {}", film.getId(), film);
         return film;
     }
+
+    public void removeFilm(long id) {
+        if (filmStorage.getFilm(id) == null) {
+            throw new NotFoundException("Фильм с id " + id + " не найден");
+        }
+        filmStorage.removeFilm(id);
+        log.info("Фильм с id = {} удален", id);
+    }
+
 
     public Film sendLike(long id, long userId) {
         Film film = filmStorage.getFilm(id);
@@ -78,7 +87,9 @@ public class FilmService {
             throw new LikesSendingException("Пользователь с id " + userId + " уже добавил лайк фильму с id " + id);
         }
 
-        filmStorage.sendLike(userId, id);
+        if (filmStorage.addLike(id, userId)) {
+            feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
+        }
 
         film.addLike(userId);
 
@@ -97,11 +108,23 @@ public class FilmService {
             throw new LikesSendingException("Пользователь с id " + userId + " не добавлял лайк фильму с id " + id);
         }
 
-        filmStorage.removeLike(userId, id);
+        if (filmStorage.removeLike(id, userId)) {
+            feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
+        }
         film.removeLike(userId);
 
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
         return film;
+    }
+
+    public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
+        if ((genreId != null) && (year != null)) {
+            return filmStorage.getPopularByGenreAndYear(count, genreId, year);
+        } else if (genreId == null) {
+            return filmStorage.getPopularByYear(count, year);
+        } else {
+            return filmStorage.getPopularByGenre(count, genreId);
+        }
     }
 
     public Collection<Film> getPopularFilms(int count) {
@@ -111,16 +134,119 @@ public class FilmService {
                 .toList();
     }
 
-    private void validate(Film film) {
-        if (film.getName() == null || film.getName().isBlank()) {
-            log.warn("Фильм не прошёл валидацию по имени");
-            throw new ValidationException("Пустое значение имени");
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        User user = userStorage.getUser(userId);
+        User friend = userStorage.getUser(friendId);
+
+        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+
+        return filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(userId) && f.getLikes().contains(friendId))
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+                .toList();
+    }
+
+    public List<Film> getRecommendations(long userId) {
+        User user = userStorage.getUser(userId);
+        if (user == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
 
-        if (film.getDescription() != null && film.getDescription().length() > 200) {
-            log.warn("Фильм не прошёл валидацию по длине описания");
-            throw new ValidationException("Максимальная длина описания — 200 символов");
+        User bestMatch = userStorage.getUsers().values().stream()
+                .filter(u -> !u.getId().equals(userId))
+                .max(Comparator.comparingInt(u -> intersectionSize(userId, u.getId())))
+                .orElse(null);
+
+        if (bestMatch == null) {
+            return List.of();
         }
+
+        Set<Long> userLikes = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(userId))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> bestMatchLikes = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(bestMatch.getId()))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> recommendedIds = bestMatchLikes.stream()
+                .filter(id -> !userLikes.contains(id))
+                .collect(Collectors.toSet());
+
+        return filmStorage.getFilms().values().stream()
+                .filter(f -> recommendedIds.contains(f.getId()))
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+                .toList();
+    }
+
+    private int intersectionSize(long user1, long user2) {
+        Set<Long> likes1 = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(user1))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> likes2 = filmStorage.getFilms().values().stream()
+                .filter(f -> f.getLikes().contains(user2))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        likes1.retainAll(likes2);
+        return likes1.size();
+    }
+
+    public LinkedHashSet<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        LinkedHashSet<Film> films = filmStorage.getFilmsByDirector(directorId);
+
+        if (films.isEmpty()) {
+            throw new NotFoundException("У режиссёра с id=" + directorId + " нет фильмов");
+        }
+
+        return switch (sortBy.toLowerCase()) {
+            case "year" -> films.stream()
+                    .sorted(Comparator.comparing(
+                            (Film f) -> f.getReleaseDate() != null ? f.getReleaseDate() : LocalDate.MIN,
+                            Comparator.naturalOrder()
+                    ))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            case "likes" -> films.stream()
+                    .sorted(Comparator.comparingInt((Film f) -> f.getLikes() != null ? f.getLikes().size() : 0)
+                            .reversed())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            default -> throw new ValidationException("Некорректный параметр sortBy: " + sortBy);
+        };
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+
+        if (query == null || query.isBlank()) {
+            log.warn("Попытка поиска с пустым запросом");
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+
+        if (by == null || by.isBlank()) {
+            log.warn("Не указан критерий поиска");
+            throw new ValidationException("Критерий поиска не может быть пустым");
+        }
+
+        String[] criteria = by.split(",");
+        for (String criterion : criteria) {
+            String trimmed = criterion.trim();
+            if (!trimmed.equals("title") && !trimmed.equals("director")) {
+                log.warn("Неверный критерий поиска: {}", trimmed);
+                throw new ValidationException(
+                        "Неверный критерий поиска: " + trimmed + ". Допустимы только: title, director"
+                );
+            }
+        }
+
+        log.info("Поиск фильмов: query='{}', by='{}'", query, by);
+        return filmStorage.searchFilms(query, by);
+    }
 
     private void validateReleaseDate(Film film) {
         LocalDate barrier = LocalDate.of(1895, 12, 28);
@@ -128,14 +254,8 @@ public class FilmService {
         if (film.getReleaseDate() == null) {
             throw new ValidationException("Дата релиза не указана");
         }
-
         if (film.getReleaseDate().isBefore(barrier)) {
             throw new ValidationException("Дата релиза не может быть раньше " + barrier);
-        }
-
-        if (film.getDuration() <= 0) {
-            log.warn("Фильм не прошёл валидацию по продолжительности");
-            throw new ValidationException("Продолжительность фильма должна быть положительным числом");
         }
     }
 }

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.FeedEventDtoMapper;
 import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
 import ru.yandex.practicum.filmorate.mappers.dto.UserDTOMapper;
@@ -95,6 +96,7 @@ public class UserController {
 
     @GetMapping("/{id}/feed")
     public ResponseEntity<List<FeedEventDTO>> getFeeds(@PathVariable Long id) {
+
         List<FeedEventDTO> body = userService.getFeedByUser(id).stream()
                 .map(FeedEventDtoMapper::toDto)
                 .toList();
