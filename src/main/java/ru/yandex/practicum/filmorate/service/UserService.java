@@ -38,6 +38,7 @@ public class UserService {
     }
 
     public User addUser(User user) {
+        normalizeUserName(user);
         userStorage.addUser(user);
         log.info("Создан пользователь {}", user);
         return user;
@@ -54,6 +55,7 @@ public class UserService {
             throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
         }
 
+        normalizeUserName(user);
         userStorage.updateUser(user.getId(), user);
         log.info("Обновлен пользователь с id={}, {}", user.getId(), user);
         return user;
@@ -154,5 +156,11 @@ public class UserService {
 
     public List<FeedEvent> getFeedByUser(Long userId) {
         return feedStorage.getEventsByUser(userId);
+    }
+
+    private void normalizeUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }
