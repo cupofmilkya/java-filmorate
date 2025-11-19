@@ -32,7 +32,7 @@ public class ReviewService {
         review.setUseful(0);
 
         Review saved = reviewStorage.addReview(review);
-        feedStorage.saveEvent(saved.getUserId(), EventType.REVIEW, Operation.ADD, saved.getReviewId());
+        feedStorage.saveEvent(saved.getUserId(), EventType.REVIEW, Operation.ADD, saved.getFilmId());
         return saved;
     }
 
@@ -60,16 +60,16 @@ public class ReviewService {
         review.setFilmId(existing.getFilmId());
 
         Review updated = reviewStorage.updateReview(review);
-        feedStorage.saveEvent(updated.getUserId(), EventType.REVIEW, Operation.UPDATE, updated.getReviewId());
+        feedStorage.saveEvent(updated.getUserId(), EventType.REVIEW, Operation.UPDATE, updated.getFilmId());
 
         return updated;
     }
 
     public void deleteById(long reviewId) {
         checkReview(reviewId);
-        Review review = getById(reviewId);
-        feedStorage.saveEvent(review.getUserId(), EventType.REVIEW, Operation.REMOVE, review.getReviewId());
+        Review existing = reviewStorage.getReview(reviewId).get();
         reviewStorage.deleteReview(reviewId);
+        feedStorage.saveEvent(existing.getUserId(), EventType.REVIEW, Operation.REMOVE, existing.getFilmId());
     }
 
     public Review putLike(long reviewId, long userId) {

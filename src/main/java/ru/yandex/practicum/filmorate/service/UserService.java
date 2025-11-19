@@ -149,6 +149,12 @@ public class UserService {
         return userStorage.getCommonFriends(id, otherId);
     }
 
+    public void requireUserExists(long userId) {
+        if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
+    }
+
     public List<FeedEvent> getFeedByUser(Long userId) {
         return feedStorage.getEventsByUser(userId);
     }

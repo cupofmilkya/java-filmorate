@@ -96,7 +96,7 @@ public class UserController {
 
     @GetMapping("/{id}/feed")
     public ResponseEntity<List<FeedEventDTO>> getFeeds(@PathVariable Long id) {
-
+        userService.requireUserExists(id);
         List<FeedEventDTO> body = userService.getFeedByUser(id).stream()
                 .map(FeedEventDtoMapper::toDto)
                 .toList();
