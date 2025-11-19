@@ -6,7 +6,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -31,14 +30,13 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void addFilm(Film film) {
-        String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
-
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
+        jdbcTemplate.update(conn -> {
+            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, film.getName());
             ps.setString(2, film.getDescription());
-            ps.setDate(3, film.getReleaseDate() != null ? java.sql.Date.valueOf(film.getReleaseDate()) : null);
+            ps.setDate(3, java.sql.Date.valueOf(film.getReleaseDate()));
             ps.setInt(4, film.getDuration());
             ps.setInt(5, film.getMpaRating().ordinal() + 1);
             return ps;
@@ -51,10 +49,14 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         if (film.getDirectorsId() != null && !film.getDirectorsId().isEmpty()) {
-            System.out.println("=== SAVING DIRECTORS FOR FILM " + film.getId() + ": " + film.getDirectorsId() + " ===");
-            saveDirectors(film.getId(), film.getDirectorsId());
-        } else {
-            System.out.println("=== NO DIRECTORS TO SAVE FOR FILM " + film.getId() + " ===");
+            saveDirectorLinks(film.getId(), film.getDirectorsId());
+        }
+    }
+
+    private void saveDirectorLinks(Long filmId, Set<Long> directorIds) {
+        String sql = "INSERT INTO director_film (film_id, director_id) VALUES (?, ?)";
+        for (Long directorId : directorIds) {
+            jdbcTemplate.update(sql, filmId, directorId);
         }
     }
 
@@ -76,34 +78,11 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film getFilm(long id) {
         String sql = "SELECT * FROM films WHERE film_id = ?";
-        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), id);
-        if (films.isEmpty()) return null;
+        Film film = jdbcTemplate.queryForObject(sql, new FilmMapper(), id);
 
-        Film film = films.getFirst();
         film.setLikes(getLikes(film.getId()));
-
-        String mpaSql = "SELECT mpa_id FROM films WHERE film_id = ?";
-        Integer mpaId = jdbcTemplate.queryForObject(mpaSql, Integer.class, film.getId());
-        if (mpaId != null && mpaId > 0 && mpaId <= MpaRating.values().length) {
-            film.setMpaRating(MpaRating.values()[mpaId - 1]);
-        }
-
-        String genresSql = "SELECT genre_id FROM genre_film WHERE film_id = ?";
-        List<Integer> genreIds = jdbcTemplate.queryForList(genresSql, Integer.class, film.getId());
-        if (genreIds != null && !genreIds.isEmpty()) {
-            Set<Genre> genres = genreIds.stream().filter(Objects::nonNull).map(idVal -> {
-                int idx = idVal - 1;
-                if (idx >= 0 && idx < Genre.values().length) return Genre.values()[idx];
-                return null;
-            }).filter(Objects::nonNull).collect(Collectors.toSet());
-            film.setGenres(genres);
-        } else {
-            film.setGenres(Set.of());
-        }
-
-        String directorsSql = "SELECT director_id FROM director_film WHERE film_id = ?";
-        List<Long> directorIds = jdbcTemplate.queryForList(directorsSql, Long.class, film.getId());
-        film.setDirectorsId(new HashSet<>(directorIds));
+        loadGenres(film);
+        loadDirectorsId(film);
 
         return film;
     }
@@ -223,20 +202,24 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void updateFilm(long id, Film film) {
-        String sql = "UPDATE films SET name=?, description=?, release_date=?, duration=?, mpa_id=? WHERE film_id=?";
-        int updated = jdbcTemplate.update(sql, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : null, id);
-        if (updated == 0) {
-            throw new NotFoundException("Фильм с id " + id + " не найден");
+        jdbcTemplate.update(
+                "UPDATE films SET name=?, description=?, release_date=?, duration=?, mpa_id=? WHERE film_id=?",
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                film.getMpaRating() != null ? film.getMpaRating().ordinal() + 1 : null,
+                id
+        );
+
+        jdbcTemplate.update("DELETE FROM genre_film WHERE film_id = ?", id);
+        if (film.getGenres() != null) {
+            saveGenres(id, film.getGenres());
         }
 
-        String deleteSql = "DELETE FROM director_film WHERE film_id = ?";
-        jdbcTemplate.update(deleteSql, id);
-
-        if (film.getDirectorsId() != null && !film.getDirectorsId().isEmpty()) {
-            String insertSql = "INSERT INTO director_film (director_id, film_id) VALUES (?, ?)";
-            for (Long directorId : film.getDirectorsId()) {
-                jdbcTemplate.update(insertSql, directorId, id);
-            }
+        jdbcTemplate.update("DELETE FROM director_film WHERE film_id = ?", id);
+        if (film.getDirectorsId() != null) {
+            saveDirectorLinks(id, film.getDirectorsId());
         }
     }
 
