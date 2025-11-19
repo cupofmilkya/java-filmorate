@@ -241,14 +241,23 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql, id);
     }
 
-    public void sendLike(Long userId, Long filmId) {
-        String sql = "INSERT INTO likes (user_id, film_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql, userId, filmId);
+    public boolean addLike(long filmId, long userId) {
+        Integer exists = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM film_likes WHERE film_id=? AND user_id=?",
+                Integer.class, filmId, userId
+        );
+        if (exists != null && exists > 0) {
+            return false; // ничего не меняем -> событие НЕ пишем
+        }
+        jdbcTemplate.update("INSERT INTO film_likes(film_id, user_id) VALUES (?, ?)", filmId, userId);
+        return true;
     }
 
-    public void removeLike(Long userId, Long filmId) {
-        String sql = "DELETE FROM likes WHERE user_id = ? AND film_id = ?";
-        jdbcTemplate.update(sql, userId, filmId);
+    public boolean removeLike(long filmId, long userId) {
+        int rows = jdbcTemplate.update(
+                "DELETE FROM film_likes WHERE film_id=? AND user_id=?", filmId, userId
+        );
+        return rows > 0;
     }
 
     public Set<Long> getLikes(Long filmId) {

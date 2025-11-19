@@ -16,9 +16,9 @@ public interface FilmStorage {
 
     void updateFilm(long id, Film film);
 
-    void sendLike(Long userId, Long filmId);
+    boolean addLike(long filmId, long userId);
 
-    void removeLike(Long userId, Long filmId);
+    boolean removeLike(long filmId, long userId);
 
     void removeFilm(long id);
 

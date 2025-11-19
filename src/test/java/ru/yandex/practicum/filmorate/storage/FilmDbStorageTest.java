@@ -121,7 +121,7 @@ class FilmDbStorageTest {
         user.setBirthday(LocalDate.of(1990, 1, 1));
         userDbStorage.addUser(user);
         Long userId = user.getId();
-        filmDbStorage.sendLike(userId, filmId);
+        filmDbStorage.addLike(userId, filmId);
         Set<Long> likes = filmDbStorage.getLikes(filmId);
         assertThat(likes).contains(userId);
         filmDbStorage.removeLike(userId, filmId);

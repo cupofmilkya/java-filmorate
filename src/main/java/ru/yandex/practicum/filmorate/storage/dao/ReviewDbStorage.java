@@ -60,19 +60,23 @@ public class ReviewDbStorage implements ReviewStorage {
         """;
 
     @Override
-    public void addReview(Review review) {
-        String sql = "INSERT INTO reviews(content, is_positive, user_id, film_id) VALUES (?,?,?,?)";
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, review.getContent());
-            ps.setBoolean(2, review.getIsPositive());
-            ps.setLong(3, review.getUserId());
-            ps.setLong(4, review.getFilmId());
+    public Review addReview(Review r) {
+        final String sql = """
+        INSERT INTO reviews(content, is_positive, user_id, film_id)
+        VALUES (?, ?, ?, ?)
+        """;
+        KeyHolder kh = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, r.getContent());
+            ps.setBoolean(2, r.getIsPositive());
+            ps.setLong(3, r.getUserId());
+            ps.setLong(4, r.getFilmId());
             return ps;
-        }, keyHolder);
-        review.setReviewId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        }, kh);
+        r.setReviewId(Objects.requireNonNull(kh.getKey()).longValue());
+        r.setUseful(0);
+        return r;
     }
 
     @Override
@@ -87,22 +91,23 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public List<Review> getReviewsByFilm(Long filmId, int count) {
-        return (filmId == null)
-                ? jdbcTemplate.query(SQL_GET_ALL, new ReviewRowMapper(), count)
-                : jdbcTemplate.query(SQL_GET_BY_FILM, new ReviewRowMapper(), filmId, count);
+        return jdbcTemplate.query(SQL_GET_BY_FILM, new ReviewRowMapper(), filmId, count);
     }
 
     @Override
-    public void updateReview(Review review) {
-        final String sql = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
-        int updated = jdbcTemplate.update(sql,
-                review.getContent(),
-                review.getIsPositive(),
-                review.getReviewId());
+    public List<Review> getReviewsByUseful(int limit) {
+        return jdbcTemplate.query(SQL_GET_ALL, new ReviewRowMapper(), limit);
+    }
 
-        if (updated == 0) {
-            throw new NotFoundException("Review id=" + review.getReviewId() + " не найден!");
+    @Override
+    public Review updateReview(Review r) {
+        String sql = "UPDATE reviews SET content=?, is_positive=? WHERE review_id=?";
+        jdbcTemplate.update(sql, r.getContent(), r.getIsPositive(), r.getReviewId());
+        Optional<Review> review = getReview(r.getReviewId());
+        if (review.isEmpty()) {
+            throw new NotFoundException("Отзыв не найден!");
         }
+        return review.get();
     }
 
     @Override
