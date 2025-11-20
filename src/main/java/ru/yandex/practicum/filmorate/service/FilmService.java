@@ -84,7 +84,8 @@ public class FilmService {
         if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
 
         if (film.getLikes().contains(userId)) {
-            throw new LikesSendingException("Пользователь с id " + userId + " уже добавил лайк фильму с id " + id);
+            log.info("Пользователь {} уже поставил лайк фильму {} ", userId, id);
+            return film;
         }
 
         if (filmStorage.addLike(id, userId)) {
@@ -138,8 +139,9 @@ public class FilmService {
         User user = userStorage.getUser(userId);
         User friend = userStorage.getUser(friendId);
 
-        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
-        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        if (user == null || friend == null) {
+            return List.of();
+        }
 
         return filmStorage.getFilms().values().stream()
                 .filter(f -> f.getLikes().contains(userId) && f.getLikes().contains(friendId))

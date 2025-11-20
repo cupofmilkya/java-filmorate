@@ -171,9 +171,16 @@ public class FilmDbStorage implements FilmStorage {
                 "ORDER BY likkes DESC " +
                 "LIMIT ?";
 
-        return jdbcTemplate.query(sql, new FilmMapper(),
-                year,
-                count);
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), year, count);
+
+        films.forEach(film -> {
+            film.setLikes(getLikes(film.getId()));
+            loadMpaRating(film);
+            loadGenres(film);
+            loadDirectorsId(film);
+        });
+
+        return films;
     }
 
     @Override
@@ -186,9 +193,16 @@ public class FilmDbStorage implements FilmStorage {
                 "ORDER BY likkes DESC " +
                 "LIMIT ?";
 
-        return jdbcTemplate.query(sql, new FilmMapper(),
-                genreId,
-                count);
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), genreId, count);
+
+        films.forEach(film -> {
+            film.setLikes(getLikes(film.getId()));
+            loadMpaRating(film);
+            loadGenres(film);
+            loadDirectorsId(film);
+        });
+
+        return films;
     }
 
     @Override
@@ -202,10 +216,16 @@ public class FilmDbStorage implements FilmStorage {
                 "ORDER BY likkes DESC " +
                 "LIMIT ?";
 
-        return jdbcTemplate.query(sql, new FilmMapper(),
-                genreId,
-                year,
-                count);
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper(), genreId, year, count);
+
+        films.forEach(film -> {
+            film.setLikes(getLikes(film.getId()));
+            loadMpaRating(film);
+            loadGenres(film);
+            loadDirectorsId(film);
+        });
+
+        return films;
     }
 
     @Override
