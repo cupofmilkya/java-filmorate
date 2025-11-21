@@ -108,6 +108,15 @@ public class FilmService {
         return dtos;
     }
 
+    public List<FilmDTO> getRecommendationsDto(long userId) {
+        List<FilmDTO> dtos = getRecommendations(userId).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
+        loadDirectorsNames(dtos);
+        return dtos;
+    }
+
+
     public Collection<Film> getFilms() {
         return filmStorage.getFilms().values();
     }

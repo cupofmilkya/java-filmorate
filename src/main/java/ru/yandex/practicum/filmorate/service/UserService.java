@@ -6,7 +6,11 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mappers.FeedEventDtoMapper;
+import ru.yandex.practicum.filmorate.mappers.dto.UserDTOMapper;
 import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.dto.FeedEventDTO;
+import ru.yandex.practicum.filmorate.model.dto.UserDTO;
 import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -25,6 +29,59 @@ public class UserService {
 
     public Collection<User> getUsers() {
         return userStorage.getUsers().values();
+    }
+
+    public List<UserDTO> getUsersDto() {
+        return getUsers().stream()
+                .map(UserDTOMapper::convertToDto)
+                .sorted((u1, u2) -> Long.compare(u1.getId(), u2.getId()))
+                .collect(Collectors.toList());
+    }
+
+    public UserDTO getUserDtoById(Long id) {
+        User user = getUser(id);
+        return UserDTOMapper.convertToDto(user);
+    }
+
+    public UserDTO addUserDto(UserDTO userDTO) {
+        User user = UserDTOMapper.convertToUser(userDTO);
+        addUser(user);
+        return UserDTOMapper.convertToDto(user);
+    }
+
+    public UserDTO updateUserDto(UserDTO userDTO) {
+        User user = UserDTOMapper.convertToUser(userDTO);
+        updateUser(user);
+        return UserDTOMapper.convertToDto(user);
+    }
+
+    public UserDTO addFriendDto(Long userId, Long friendId) {
+        User user = addFriend(userId, friendId);
+        return UserDTOMapper.convertToDto(user);
+    }
+
+    public UserDTO deleteFriendDto(Long userId, Long friendId) {
+        User user = deleteFriend(userId, friendId);
+        return UserDTOMapper.convertToDto(user);
+    }
+
+    public List<UserDTO> getFriendsDto(Long userId) {
+        return getFriends(userId).stream()
+                .map(UserDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<UserDTO> getCommonFriendsDto(Long userId, Long otherId) {
+        return getCommonFriends(userId, otherId).stream()
+                .map(UserDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<FeedEventDTO> getFeedByUserDto(Long userId) {
+        requireUserExists(userId);
+        return getFeedByUser(userId).stream()
+                .map(FeedEventDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public User getUser(Long id) {
