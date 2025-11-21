@@ -79,16 +79,9 @@ public class FilmController {
     public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count,
                                                          @RequestParam(required = false) Long genreId,
                                                          @RequestParam(required = false) Long year) {
-        List<FilmDTO> films;
-        if ((genreId == null) && (year == null)) {
-            films = filmService.getPopularFilms((int) count).stream()
-                    .map(FilmDTOMapper::convertToDto)
-                    .collect(Collectors.toList());
-        } else {
-            films = filmService.getPopularFilms(count, genreId, year).stream()
-                    .map(FilmDTOMapper::convertToDto)
-                    .collect(Collectors.toList());
-        }
+        List<FilmDTO> films = filmService.getPopularFilms(count, genreId, year).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .toList();
         loadDirectorsNames(films);
         return ResponseEntity.ok(films);
     }

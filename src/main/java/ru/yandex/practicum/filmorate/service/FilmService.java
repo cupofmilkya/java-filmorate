@@ -113,12 +113,17 @@ public class FilmService {
     }
 
     public Collection<Film> getPopularFilms(Long count, Long genreId, Long year) {
-        if ((genreId != null) && (year != null)) {
+        if (genreId != null && year != null) {
             return filmStorage.getPopularByGenreAndYear(count, genreId, year);
-        } else if (genreId == null) {
+        } else if (genreId == null && year != null) {
             return filmStorage.getPopularByYear(count, year);
-        } else {
+        } else if (genreId != null) {
             return filmStorage.getPopularByGenre(count, genreId);
+        } else {
+            return filmStorage.getFilms().values().stream()
+                    .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+                    .limit(count)
+                    .toList();
         }
     }
 
