@@ -6,10 +6,11 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.controller.exception.LikesSendingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.EventType;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Operation;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.dto.DirectorDTO;
+import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
+import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -28,6 +29,84 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
     private final FeedStorage feedStorage;
+    private final DirectorStorage directorStorage;
+
+    public List<FilmDTO> getFilmsDto() {
+        List<FilmDTO> dtos = getFilms().stream()
+                .map(FilmDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+        loadDirectorsNames(dtos);
+        return dtos;
+    }
+
+    public FilmDTO getFilmDtoById(Long id) {
+        Film film = getFilm(id);
+        FilmDTO dto = FilmDTOMapper.convertToDto(film);
+        loadDirectorsNames(List.of(dto));
+        return dto;
+    }
+
+    public FilmDTO addFilmDto(FilmDTO filmDTO) {
+        Film film = FilmDTOMapper.convertToFilm(filmDTO);
+        addFilm(film);
+        FilmDTO dto = FilmDTOMapper.convertToDto(film);
+        loadDirectorsNames(List.of(dto));
+        return dto;
+    }
+
+    public FilmDTO updateFilmDto(FilmDTO filmDTO) {
+        Film film = FilmDTOMapper.convertToFilm(filmDTO);
+        updateFilm(film);
+        FilmDTO dto = FilmDTOMapper.convertToDto(film);
+        loadDirectorsNames(List.of(dto));
+        return dto;
+    }
+
+    public FilmDTO sendLikeDto(Long filmId, Long userId) {
+        Film film = sendLike(filmId, userId);
+        FilmDTO dto = FilmDTOMapper.convertToDto(film);
+        loadDirectorsNames(List.of(dto));
+        return dto;
+    }
+
+    public FilmDTO removeLikeDto(Long filmId, Long userId) {
+        Film film = removeLike(filmId, userId);
+        FilmDTO dto = FilmDTOMapper.convertToDto(film);
+        loadDirectorsNames(List.of(dto));
+        return dto;
+    }
+
+    public List<FilmDTO> getPopularFilmsDto(Long count, Long genreId, Long year) {
+        List<FilmDTO> dtos = getPopularFilms(count, genreId, year).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+        loadDirectorsNames(dtos);
+        return dtos;
+    }
+
+    public List<FilmDTO> getCommonFilmsDto(Long userId, Long friendId) {
+        List<FilmDTO> dtos = getCommonFilms(userId, friendId).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+        loadDirectorsNames(dtos);
+        return dtos;
+    }
+
+    public List<FilmDTO> searchFilmsDto(String query, String by) {
+        List<FilmDTO> dtos = searchFilms(query, by).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+        loadDirectorsNames(dtos);
+        return dtos;
+    }
+
+    public List<FilmDTO> getFilmsByDirectorDto(Long directorId, String sortBy) {
+        List<FilmDTO> dtos = getFilmsByDirector(directorId, sortBy).stream()
+                .map(FilmDTOMapper::convertToDto)
+                .collect(Collectors.toList());
+        loadDirectorsNames(dtos);
+        return dtos;
+    }
 
     public Collection<Film> getFilms() {
         return filmStorage.getFilms().values();
@@ -257,6 +336,23 @@ public class FilmService {
         }
         if (film.getReleaseDate().isBefore(barrier)) {
             throw new ValidationException("Дата релиза не может быть раньше " + barrier);
+        }
+    }
+
+    private void loadDirectorsNames(List<FilmDTO> filmDTOs) {
+        for (FilmDTO dto : filmDTOs) {
+            if (dto.getDirectors() != null && !dto.getDirectors().isEmpty()) {
+                Set<Long> directorIds = dto.getDirectors().stream()
+                        .map(DirectorDTO::getId)
+                        .collect(Collectors.toSet());
+
+                Set<Director> directors = directorStorage.getDirectorsByIds(directorIds);
+                Set<DirectorDTO> directorsDto = directors.stream()
+                        .map(d -> new DirectorDTO(d.getId(), d.getName()))
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                dto.setDirectors(directorsDto);
+            }
         }
     }
 }
