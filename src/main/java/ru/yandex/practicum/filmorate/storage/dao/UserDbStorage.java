@@ -127,7 +127,7 @@ public class UserDbStorage implements UserStorage {
     @Override
     public List<User> getCommonFriends(Long userId, Long otherId) {
         final String sql = """
-            SELECT u.* 
+            SELECT u.*
             FROM users u
             JOIN user_friendships f1 ON u.user_id = f1.friend_id
             JOIN user_friendships f2 ON u.user_id = f2.friend_id
@@ -140,10 +140,10 @@ public class UserDbStorage implements UserStorage {
     @Override
     public List<User> getFriends(Long userId) {
         final String sql = """
-            SELECT u.* 
-            FROM users u 
-            JOIN user_friendships f ON u.user_id = f.friend_id 
-            WHERE f.user_id = ? 
+            SELECT u.*
+            FROM users u
+            JOIN user_friendships f ON u.user_id = f.friend_id
+            WHERE f.user_id = ?
             ORDER BY u.user_id
             """;
         return jdbcTemplate.query(sql, new UserMapper(), userId);
