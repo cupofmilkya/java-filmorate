@@ -83,18 +83,13 @@ public class FilmService {
         if (film == null) throw new NotFoundException("Фильм с id " + id + " не найден");
         if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
 
-        if (film.getLikes().contains(userId)) {
-            log.info("Пользователь {} уже поставил лайк фильму {} ", userId, id);
-            return film;
+        if (!film.getLikes().contains(userId)) {
+            filmStorage.addLike(id, userId);
+            film.addLike(userId);
+            log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
         }
 
-        if (filmStorage.addLike(id, userId)) {
-            feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
-        }
-
-        film.addLike(userId);
-
-        log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
+        feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
         return film;
     }
 
@@ -109,11 +104,10 @@ public class FilmService {
             throw new LikesSendingException("Пользователь с id " + userId + " не добавлял лайк фильму с id " + id);
         }
 
-        if (filmStorage.removeLike(id, userId)) {
-            feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
-        }
-        film.removeLike(userId);
+        boolean inserted = filmStorage.removeLike(id, userId);
 
+        film.removeLike(userId);
+        feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
         return film;
     }
