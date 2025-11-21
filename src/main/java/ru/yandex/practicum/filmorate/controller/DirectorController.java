@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.mappers.dto.DirectorDTOMapper;
-import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.dto.DirectorDTO;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
@@ -19,18 +18,12 @@ public class DirectorController {
 
     @GetMapping
     public ResponseEntity<List<DirectorDTO>> getDirectors() {
-        List<DirectorDTO> directors = directorService.getDirectors().stream()
-                .map(DirectorDTOMapper::convertToDto)
-                .toList();
-
-        return ResponseEntity.ok(directors);
+        return ResponseEntity.ok(directorService.getDirectorsDto());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<DirectorDTO> getDirector(@PathVariable Long id) {
-        DirectorDTO directorDTO = DirectorDTOMapper.convertToDto(directorService.getDirector(id));
-
-        return ResponseEntity.ok(directorDTO);
+        return ResponseEntity.ok(directorService.getDirectorDto(id));
     }
 
     @PostMapping()
@@ -43,15 +36,11 @@ public class DirectorController {
 
     @PutMapping()
     public ResponseEntity<DirectorDTO> updateDirector(@Valid @RequestBody DirectorDTO director) {
-        Director directorUpdated = directorService.updateDirector(DirectorDTOMapper.convertToDirector(director));
-
-        return ResponseEntity.ok(DirectorDTOMapper.convertToDto(directorUpdated));
+        return ResponseEntity.ok(directorService.updateDirectorDto(director));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<DirectorDTO> deleteDirector(@PathVariable Long id) {
-        Director director = directorService.deleteDirector(id);
-
-        return ResponseEntity.ok(DirectorDTOMapper.convertToDto(director));
+        return ResponseEntity.ok(directorService.deleteDirectorDto(id));
     }
 }

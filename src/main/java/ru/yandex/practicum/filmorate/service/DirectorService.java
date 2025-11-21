@@ -3,7 +3,9 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.mappers.dto.DirectorDTOMapper;
 import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.dto.DirectorDTO;
 import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 
 import java.util.List;
@@ -14,6 +16,30 @@ import java.util.List;
 public class DirectorService {
 
     private final DirectorStorage directorStorage;
+
+    public List<DirectorDTO> getDirectorsDto() {
+        return getDirectors().stream()
+                .map(DirectorDTOMapper::convertToDto)
+                .toList();
+    }
+
+    public DirectorDTO getDirectorDto(Long id) {
+        return DirectorDTOMapper.convertToDto(getDirector(id));
+    }
+
+    public DirectorDTO addDirectorDto(DirectorDTO directorDto) {
+        Director director = DirectorDTOMapper.convertToDirector(directorDto);
+        return DirectorDTOMapper.convertToDto(addDirector(director));
+    }
+
+    public DirectorDTO updateDirectorDto(DirectorDTO directorDto) {
+        Director director = DirectorDTOMapper.convertToDirector(directorDto);
+        return DirectorDTOMapper.convertToDto(updateDirector(director));
+    }
+
+    public DirectorDTO deleteDirectorDto(Long id) {
+        return DirectorDTOMapper.convertToDto(deleteDirector(id));
+    }
 
     public List<Director> getDirectors() {
         return directorStorage.getDirectors();
