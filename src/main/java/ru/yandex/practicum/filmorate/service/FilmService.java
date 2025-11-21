@@ -83,15 +83,13 @@ public class FilmService {
         if (film == null) throw new NotFoundException("Фильм с id " + id + " не найден");
         if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
 
-        if (film.getLikes().contains(userId)) {
-            throw new LikesSendingException("Пользователь с id " + userId + " уже добавил лайк фильму с id " + id);
+        if (!film.getLikes().contains(userId)) {
+            filmStorage.addLike(id, userId);
+            film.addLike(userId);
+            log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
         }
 
-        filmStorage.sendLike(userId, id);
-
-        film.addLike(userId);
         feedStorage.saveEvent(userId, EventType.LIKE, Operation.ADD, id);
-        log.info("Пользователь {} поставил лайк фильму {} ", userId, id);
         return film;
     }
 
@@ -106,7 +104,8 @@ public class FilmService {
             throw new LikesSendingException("Пользователь с id " + userId + " не добавлял лайк фильму с id " + id);
         }
 
-        filmStorage.removeLike(userId, id);
+        boolean inserted = filmStorage.removeLike(id, userId);
+
         film.removeLike(userId);
         feedStorage.saveEvent(userId, EventType.LIKE, Operation.REMOVE, id);
         log.info("Пользователь {} убрал лайк у фильма {} ", userId, id);
@@ -134,8 +133,9 @@ public class FilmService {
         User user = userStorage.getUser(userId);
         User friend = userStorage.getUser(friendId);
 
-        if (user == null) throw new NotFoundException("Пользователь с id " + userId + " не найден");
-        if (friend == null) throw new NotFoundException("Пользователь с id " + friendId + " не найден");
+        if (user == null || friend == null) {
+            return List.of();
+        }
 
         return filmStorage.getFilms().values().stream()
                 .filter(f -> f.getLikes().contains(userId) && f.getLikes().contains(friendId))

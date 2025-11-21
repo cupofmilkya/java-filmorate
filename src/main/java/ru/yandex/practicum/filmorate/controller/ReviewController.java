@@ -1,11 +1,10 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mappers.ReviewDtoMapper;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.dto.ReviewDTO;
@@ -22,14 +21,14 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping
-    public ResponseEntity<ReviewDTO> create(@Validated(ReviewDTO.OnCreate.class) @RequestBody ReviewDTO dto) {
+    public ResponseEntity<ReviewDTO> create(@Valid @RequestBody ReviewDTO dto) {
         log.info("POST /reviews : создать отзыв для user={}, film={}", dto.getUserId(), dto.getFilmId());
         Review createdReview = reviewService.create(ReviewDtoMapper.toDomain(dto));
         return ResponseEntity.ok(ReviewDtoMapper.toDto(createdReview));
     }
 
     @PutMapping
-    public ResponseEntity<ReviewDTO> update(@Validated(ReviewDTO.OnUpdate.class) @RequestBody ReviewDTO dto) {
+    public ResponseEntity<ReviewDTO> update(@Valid @RequestBody ReviewDTO dto) {
         log.info("PUT /reviews : обновление review id={}", dto.getReviewId());
         Review updatedReview = reviewService.update(ReviewDtoMapper.toDomain(dto));
         return ResponseEntity.ok(ReviewDtoMapper.toDto(updatedReview));
@@ -48,14 +47,15 @@ public class ReviewController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReviewDTO>> getAll(@RequestParam(required = false) Long filmId,
-                                  @RequestParam(defaultValue = "10") int count) {
-        if (count <= 0) throw new ValidationException("count должен быть положительным числом!");
+    public List<Review> getAll(
+            @RequestParam(required = false) Long filmId,
+            @RequestParam(defaultValue = "10") Integer count
+    ) {
         log.info("GET /reviews?filmId={}&count={}", filmId, count);
-        return ResponseEntity.ok(reviewService.getReviewsByFilm(filmId, count)
-                .stream()
-                .map(ReviewDtoMapper::toDto)
-                .toList());
+        int limit = (count == null || count <= 0) ? 10 : count;
+        return (filmId == null)
+                ? reviewService.getAll(limit)
+                : reviewService.getReviewsByFilm(filmId, limit);
     }
 
     @PutMapping("/{id}/like/{userId}")

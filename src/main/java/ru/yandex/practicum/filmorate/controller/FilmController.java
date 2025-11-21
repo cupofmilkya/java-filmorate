@@ -6,10 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.mappers.dto.FilmDTOMapper;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.dto.DirectorDTO;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -18,35 +23,37 @@ import java.util.stream.Collectors;
 public class FilmController {
 
     private final FilmService filmService;
+    private final DirectorStorage directorStorage;
 
     @GetMapping
     public ResponseEntity<List<FilmDTO>> getFilms() {
         List<FilmDTO> films = filmService.getFilms().stream()
                 .map(FilmDTOMapper::convertToDto)
-                .toList();
+                .collect(Collectors.toList());
 
+        loadDirectorsNames(films);
         return ResponseEntity.ok(films);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FilmDTO> getFilmById(@PathVariable Long id) {
-        FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.getFilm(id));
-
-        return ResponseEntity.ok(filmdto);
+        FilmDTO filmDto = FilmDTOMapper.convertToDto(filmService.getFilm(id));
+        loadDirectorsNames(List.of(filmDto));
+        return ResponseEntity.ok(filmDto);
     }
 
     @PostMapping
     public ResponseEntity<FilmDTO> createFilm(@Valid @RequestBody FilmDTO filmDTO) {
-        FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.addFilm(FilmDTOMapper.convertToFilm(filmDTO)));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(filmdto);
+        FilmDTO filmDto = FilmDTOMapper.convertToDto(filmService.addFilm(FilmDTOMapper.convertToFilm(filmDTO)));
+        loadDirectorsNames(List.of(filmDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(filmDto);
     }
 
     @PutMapping
     public ResponseEntity<FilmDTO> updateFilm(@Valid @RequestBody FilmDTO filmDTO) {
-        FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.updateFilm(FilmDTOMapper.convertToFilm(filmDTO)));
-
-        return ResponseEntity.ok(filmdto);
+        FilmDTO filmDto = FilmDTOMapper.convertToDto(filmService.updateFilm(FilmDTOMapper.convertToFilm(filmDTO)));
+        loadDirectorsNames(List.of(filmDto));
+        return ResponseEntity.ok(filmDto);
     }
 
     @DeleteMapping("/{id}")
@@ -56,16 +63,16 @@ public class FilmController {
 
     @PutMapping("/{id}/like/{userId}")
     public ResponseEntity<FilmDTO> addLike(@PathVariable long id, @PathVariable long userId) {
-        FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.sendLike(id, userId));
-
-        return ResponseEntity.ok(filmdto);
+        FilmDTO filmDto = FilmDTOMapper.convertToDto(filmService.sendLike(id, userId));
+        loadDirectorsNames(List.of(filmDto));
+        return ResponseEntity.ok(filmDto);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public ResponseEntity<FilmDTO> removeLike(@PathVariable long id, @PathVariable long userId) {
-        FilmDTO filmdto = FilmDTOMapper.convertToDto(filmService.removeLike(id, userId));
-
-        return ResponseEntity.ok(filmdto);
+        FilmDTO filmDto = FilmDTOMapper.convertToDto(filmService.removeLike(id, userId));
+        loadDirectorsNames(List.of(filmDto));
+        return ResponseEntity.ok(filmDto);
     }
 
     @GetMapping("/popular")
@@ -76,12 +83,13 @@ public class FilmController {
         if ((genreId == null) && (year == null)) {
             films = filmService.getPopularFilms((int) count).stream()
                     .map(FilmDTOMapper::convertToDto)
-                    .toList();
+                    .collect(Collectors.toList());
         } else {
             films = filmService.getPopularFilms(count, genreId, year).stream()
                     .map(FilmDTOMapper::convertToDto)
-                    .toList();
+                    .collect(Collectors.toList());
         }
+        loadDirectorsNames(films);
         return ResponseEntity.ok(films);
     }
 
@@ -94,6 +102,7 @@ public class FilmController {
                 .map(FilmDTOMapper::convertToDto)
                 .collect(Collectors.toList());
 
+        loadDirectorsNames(films);
         return ResponseEntity.ok(films);
     }
 
@@ -104,8 +113,9 @@ public class FilmController {
 
         List<FilmDTO> films = filmService.getCommonFilms(userId, friendId).stream()
                 .map(FilmDTOMapper::convertToDto)
-                .toList();
+                .collect(Collectors.toList());
 
+        loadDirectorsNames(films);
         return ResponseEntity.ok(films);
     }
 
@@ -116,8 +126,26 @@ public class FilmController {
 
         List<FilmDTO> films = filmService.searchFilms(query, by).stream()
                 .map(FilmDTOMapper::convertToDto)
-                .toList();
+                .collect(Collectors.toList());
 
+        loadDirectorsNames(films);
         return ResponseEntity.ok(films);
+    }
+
+    private void loadDirectorsNames(List<FilmDTO> filmDTOs) {
+        for (FilmDTO dto : filmDTOs) {
+            if (dto.getDirectors() != null && !dto.getDirectors().isEmpty()) {
+                Set<Long> directorIds = dto.getDirectors().stream()
+                        .map(DirectorDTO::getId)
+                        .collect(Collectors.toSet());
+
+                Set<Director> directors = directorStorage.getDirectorsByIds(directorIds);
+                Set<DirectorDTO> directorsDto = directors.stream()
+                        .map(d -> new DirectorDTO(d.getId(), d.getName()))
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                dto.setDirectors(directorsDto);
+            }
+        }
     }
 }

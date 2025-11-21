@@ -34,7 +34,7 @@ public final class FilmDTOMapper {
                         : new LinkedHashSet<>())
                 .directors(film.getDirectorsId() != null && !film.getDirectorsId().isEmpty()
                         ? film.getDirectorsId().stream()
-                        .map(id -> new DirectorDTO(id, "Director " + id)) // временное решение
+                        .map(id -> new DirectorDTO(id, null))
                         .collect(Collectors.toCollection(LinkedHashSet::new))
                         : new LinkedHashSet<>())
                 .build();

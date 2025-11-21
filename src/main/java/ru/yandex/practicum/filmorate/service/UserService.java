@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,6 +37,7 @@ public class UserService {
     }
 
     public User addUser(User user) {
+        normalizeUserName(user);
         userStorage.addUser(user);
         log.info("Создан пользователь {}", user);
         return user;
@@ -54,6 +54,7 @@ public class UserService {
             throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
         }
 
+        normalizeUserName(user);
         userStorage.updateUser(user.getId(), user);
         log.info("Обновлен пользователь с id={}, {}", user.getId(), user);
         return user;
@@ -114,20 +115,18 @@ public class UserService {
         return userStorage.getUser(id);
     }
 
-    public Set<User> getFriends(Long id) {
+    public List<User> getFriends(Long id) {
         User user = userStorage.getUser(id);
+
         if (user == null) {
             log.warn("Попытка получить список друзей несуществующего пользователя {}", id);
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
 
-        return user.getFriends().keySet().stream()
-                .map(userStorage::getUser)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return userStorage.getFriends(id);
     }
 
-    public Set<User> getCommonFriends(Long id, Long otherId) {
+    public List<User> getCommonFriends(Long id, Long otherId) {
         User user = userStorage.getUser(id);
         User other = userStorage.getUser(otherId);
 
@@ -146,13 +145,22 @@ public class UserService {
 
         log.info("Общие друзья {} и {}: {}", id, otherId, commonIds);
 
-        return commonIds.stream()
-                .map(userStorage::getUser)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return userStorage.getCommonFriends(id, otherId);
+    }
+
+    public void requireUserExists(long userId) {
+        if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
     }
 
     public List<FeedEvent> getFeedByUser(Long userId) {
         return feedStorage.getEventsByUser(userId);
+    }
+
+    private void normalizeUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }
