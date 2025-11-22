@@ -1,133 +1,79 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.controller.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.dto.FilmDTO;
-import ru.yandex.practicum.filmorate.model.dto.GenreDTO;
-import ru.yandex.practicum.filmorate.model.dto.MpaDTO;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
 @RequestMapping("/films")
+@RequiredArgsConstructor
 public class FilmController {
 
-    @Autowired
-    private FilmService filmService;
+    private final FilmService filmService;
 
     @GetMapping
     public ResponseEntity<List<FilmDTO>> getFilms() {
-        List<FilmDTO> films = filmService.getFilms().stream()
-                .map(this::convertToDto)
-                .toList();
-
-        return ResponseEntity.ok(films);
+        return ResponseEntity.ok(filmService.getFilmsDto());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FilmDTO> getFilmById(@PathVariable Long id) {
-        FilmDTO filmdto = convertToDto(filmService.getFilm(id));
-
-        return ResponseEntity.ok(filmdto);
+        return ResponseEntity.ok(filmService.getFilmDtoById(id));
     }
 
     @PostMapping
-    public ResponseEntity<FilmDTO> createFilm(@RequestBody FilmDTO filmDTO) {
-        FilmDTO filmdto = convertToDto(filmService.addFilm(convertToFilm(filmDTO)));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(filmdto);
+    public ResponseEntity<FilmDTO> createFilm(@Valid @RequestBody FilmDTO filmDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(filmService.addFilmDto(filmDTO));
     }
 
     @PutMapping
-    public ResponseEntity<FilmDTO> updateFilm(@RequestBody FilmDTO filmDTO) {
-        FilmDTO filmdto = convertToDto(filmService.updateFilm(convertToFilm(filmDTO)));
+    public ResponseEntity<FilmDTO> updateFilm(@Valid @RequestBody FilmDTO filmDTO) {
+        return ResponseEntity.ok(filmService.updateFilmDto(filmDTO));
+    }
 
-        return ResponseEntity.ok(filmdto);
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable long id) {
+        filmService.removeFilm(id);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public ResponseEntity<FilmDTO> addLike(@PathVariable long id, @PathVariable long userId) {
-        FilmDTO filmdto = convertToDto(filmService.sendLike(id, userId));
-
-        return ResponseEntity.ok(filmdto);
+        return ResponseEntity.ok(filmService.sendLikeDto(id, userId));
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public ResponseEntity<FilmDTO> removeLike(@PathVariable long id, @PathVariable long userId) {
-        FilmDTO filmdto = convertToDto(filmService.removeLike(id, userId));
-
-        return ResponseEntity.ok(filmdto);
+        return ResponseEntity.ok(filmService.removeLikeDto(id, userId));
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        List<FilmDTO> films = filmService.getPopularFilms((int) count).stream()
-                .map(this::convertToDto)
-                .toList();
-
-        return ResponseEntity.ok(films);
+    public ResponseEntity<List<FilmDTO>> getPopularFilms(@RequestParam(defaultValue = "10") long count,
+                                                         @RequestParam(required = false) Long genreId,
+                                                         @RequestParam(required = false) Long year) {
+        return ResponseEntity.ok(filmService.getPopularFilmsDto(count, genreId, year));
     }
 
-    private FilmDTO convertToDto(Film film) {
-        return FilmDTO.builder()
-                .id(film.getId())
-                .name(film.getName())
-                .description(film.getDescription())
-                .releaseDate(film.getReleaseDate())
-                .duration(film.getDuration())
-                .mpa(film.getMpaRating() != null ? MpaDTO.fromEnum(film.getMpaRating()) : null)
-                .genres(film.getGenres() != null && !film.getGenres().isEmpty()
-                        ? film.getGenres().stream()
-                        .map(GenreDTO::fromEnum)
-                        .sorted(Comparator.comparingInt(GenreDTO::getId))
-                        .collect(Collectors.toCollection(LinkedHashSet::new))
-                        : new LinkedHashSet<>())
-                .build();
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<List<FilmDTO>> getFilmsByDirector(@PathVariable Long directorId,
+                                                            @RequestParam(defaultValue = "year") String sortBy) {
+        return ResponseEntity.ok(filmService.getFilmsByDirectorDto(directorId, sortBy));
     }
 
-    private Film convertToFilm(FilmDTO dto) {
-        Film film = new Film();
-        film.setId(dto.getId());
-        film.setName(dto.getName());
-        film.setDescription(dto.getDescription());
-        film.setReleaseDate(dto.getReleaseDate());
-        film.setDuration(dto.getDuration());
+    @GetMapping("/common")
+    public ResponseEntity<List<FilmDTO>> getCommonFilms(@RequestParam long userId,
+                                                        @RequestParam long friendId) {
+        return ResponseEntity.ok(filmService.getCommonFilmsDto(userId, friendId));
+    }
 
-        if (dto.getMpa() != null) {
-            int mpaId = dto.getMpa().getId();
-            if (mpaId > 0 && mpaId <= MpaRating.values().length) {
-                film.setMpaRating(MpaRating.values()[mpaId - 1]);
-            } else {
-                throw new NotFoundException("Не существует MPA с ID: " + mpaId);
-            }
-        } else {
-            throw new ValidationException("Не указан ID MPA");
-        }
-
-        if (dto.getGenres() != null && !dto.getGenres().isEmpty()) {
-            Set<Genre> genres = dto.getGenres().stream()
-                    .map(g -> {
-                        int index = g.getId() - 1;
-                        if (index < 0 || index >= Genre.values().length) {
-                            throw new NotFoundException("Не существует жанра с ID: " + g.getId());
-                        }
-                        return Genre.values()[index];
-                    })
-                    .collect(Collectors.toSet());
-            film.setGenres(genres);
-        } else {
-            film.setGenres(Set.of());
-        }
-
-        return film;
+    @GetMapping("/search")
+    public ResponseEntity<List<FilmDTO>> searchFilms(@RequestParam String query,
+                                                     @RequestParam String by) {
+        return ResponseEntity.ok(filmService.searchFilmsDto(query, by));
     }
 }

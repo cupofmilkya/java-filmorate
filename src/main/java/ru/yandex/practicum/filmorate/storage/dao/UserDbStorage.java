@@ -8,14 +8,16 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.controller.exception.FriendsAddingException;
 import ru.yandex.practicum.filmorate.controller.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,7 +56,7 @@ public class UserDbStorage implements UserStorage {
         List<User> users = jdbcTemplate.query(sql, new UserMapper(), id);
         if (users.isEmpty()) return null;
         User user = users.getFirst();
-        loadAllFriends(user);
+        loadAllFriends(List.of(user));
         return user;
     }
 
@@ -62,9 +64,7 @@ public class UserDbStorage implements UserStorage {
     public Map<Long, User> getUsers() {
         String sql = "SELECT * FROM users";
         List<User> users = jdbcTemplate.query(sql, new UserMapper());
-        for (User u : users) {
-            loadAllFriends(u);
-        }
+        loadAllFriends(users);
         return users.stream().collect(Collectors.toMap(User::getId, u -> u));
     }
 
@@ -81,6 +81,15 @@ public class UserDbStorage implements UserStorage {
         if (updated == 0) {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
+    }
+
+    @Override
+    public void removeUser(long id) {
+        //удаляем пользователя из таблицы users
+        String sql = "DELETE  FROM users " +
+                "WHERE user_id = ?";
+        jdbcTemplate.update(sql,
+                id);
     }
 
     @Override
@@ -104,14 +113,56 @@ public class UserDbStorage implements UserStorage {
         jdbcTemplate.update(deleteSql, userId, friendId);
     }
 
-    private void loadAllFriends(User user) {
-        user.getFriends().clear();
+    private void loadAllFriends(List<User> users) {
+        if (users.isEmpty()) return;
 
-        String sql = "SELECT friend_id FROM user_friendships WHERE user_id = ?";
-        List<Long> friendIds = jdbcTemplate.queryForList(sql, Long.class, user.getId());
+        List<Long> userIds = users.stream().map(User::getId).toList();
 
-        for (Long fid : friendIds) {
-            user.getFriends().put(fid, FriendshipStatus.CONFIRMED);
+        String sql = "SELECT user_id, friend_id FROM user_friendships WHERE user_id IN (%s)"
+                .formatted(userIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
+
+        Map<Long, List<Long>> friendsMap = jdbcTemplate.query(sql, rs -> {
+            Map<Long, List<Long>> map = new HashMap<>();
+            while (rs.next()) {
+                long userId = rs.getLong("user_id");
+                long friendId = rs.getLong("friend_id");
+                map.computeIfAbsent(userId, k -> new ArrayList<>()).add(friendId);
+            }
+            return map;
+        });
+
+        for (User u : users) {
+            List<Long> friendIds = friendsMap.getOrDefault(u.getId(), List.of());
+            for (Long fid : friendIds) {
+                u.getFriends().put(fid, FriendshipStatus.CONFIRMED);
+            }
         }
     }
+
+    @Override
+    public List<User> getCommonFriends(Long userId, Long otherId) {
+        final String sql = """
+            SELECT u.*
+            FROM users u
+            JOIN user_friendships f1 ON u.user_id = f1.friend_id
+            JOIN user_friendships f2 ON u.user_id = f2.friend_id
+            WHERE f1.user_id = ? AND f2.user_id = ?
+            ORDER BY u.user_id
+            """;
+        return jdbcTemplate.query(sql, new UserMapper(), userId, otherId);
+    }
+
+    @Override
+    public List<User> getFriends(Long userId) {
+        final String sql = """
+            SELECT u.*
+            FROM users u
+            JOIN user_friendships f ON u.user_id = f.friend_id
+            WHERE f.user_id = ?
+            ORDER BY u.user_id
+            """;
+        return jdbcTemplate.query(sql, new UserMapper(), userId);
+    }
+
+
 }

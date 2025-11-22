@@ -2,6 +2,9 @@ package ru.yandex.practicum.filmorate.storage;
 
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 public interface FilmStorage {
@@ -13,7 +16,19 @@ public interface FilmStorage {
 
     void updateFilm(long id, Film film);
 
-    void sendLike(Long userId, Long filmId);
+    boolean addLike(long filmId, long userId);
 
-    void removeLike(Long userId, Long filmId);
+    boolean removeLike(long filmId, long userId);
+
+    void removeFilm(long id);
+
+    LinkedHashSet<Film> getFilmsByDirector(Long directorId);
+
+    Collection<Film> getPopularByYear(Long count, Long year);
+
+    Collection<Film> getPopularByGenre(Long count, Long genreId);
+
+    Collection<Film> getPopularByGenreAndYear(Long count, Long genreId, Long year);
+
+    List<Film> searchFilms(String query, String by);
 }
